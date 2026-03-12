@@ -146,6 +146,7 @@ function App() {
   const [superFiltro, setSuperFiltro] = React.useState("Todos");
   const [catFiltro, setCatFiltro]     = React.useState("Todas");
   const [soloOfertas, setSoloOfertas] = React.useState(false);
+  const [orden, setOrden] = React.useState("reciente");
   const [busqueda, setBusqueda]       = React.useState("");
 
   async function cargar() {
@@ -177,7 +178,12 @@ function App() {
     await fetch(`${API}/productos/${id}/favorito`, { method:"POST" });
     cargar();
   }
-
+  const productosOrdenados = [...productos].sort((a, b) => {
+    if (orden === "precio-asc")  return (a.precio || 0) - (b.precio || 0);
+    if (orden === "precio-desc") return (b.precio || 0) - (a.precio || 0);
+    if (orden === "descuento")   return (b.descuento_pct || 0) - (a.descuento_pct || 0);
+    return 0; // reciente — viene ordenado del backend
+  });
   const supers = ["Todos", "VEA", "Carrefour", "MasOnline", "Dino"];
   const cats   = ["Todas", ...Object.keys(CAT_LABELS)];
 
@@ -253,6 +259,14 @@ function App() {
               Solo ofertas y promos
             </button>
           </div>
+          <div className="filter-row">
+            <span className="filter-label">Ordenar por</span>
+            {[["reciente","Más reciente"],["precio-asc","Precio ↑"],["precio-desc","Precio ↓"],["descuento","Mayor descuento"]].map(([key,label]) => (
+              <button key={key} className={`pill ${orden===key?"active":""}`}
+                style={orden===key ? {background:"#1a1a1a",color:"#fff"} : {}}
+                onClick={() => setOrden(key)}>{label}</button>
+            ))}
+          </div>
         </div>
 
         {/* Contador */}
@@ -268,7 +282,7 @@ function App() {
           </div>
         ) : (
           <div className="grid">
-            {productos.map(p => {
+            {productosOrdenados.map(p => {
               const hasOffer = p.descuento_pct || p.promocion;
               const sc = SUPER_COLORS[p.supermercado] || {bg:"#888",text:"#fff"};
               return (
