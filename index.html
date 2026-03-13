@@ -494,7 +494,7 @@ function App() {
                       {p.promocion}
                     </span>}
                   {p.supermercado === "VEA" && !p.descuento_pct && !p.promocion &&
-                    <a href={`https://www.vea.com.ar/busca/?ft=${encodeURIComponent(p.nombre)}`}
+                    <a href={p.url}
                       target="_blank" rel="noopener noreferrer"
                       onClick={e => e.stopPropagation()}
                       className="promo"
