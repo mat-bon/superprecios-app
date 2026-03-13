@@ -493,6 +493,23 @@ function App() {
                     <span className="promo" style={{background:promoColor(p.promocion)}}>
                       {p.promocion}
                     </span>}
+                  {p.otros_supers && p.otros_supers.length > 0 &&
+                    <div style={{marginTop:4,display:"flex",flexDirection:"column",gap:3}}>
+                      {p.otros_supers.map(o => (
+                        <a key={o.supermercado} href={o.url} target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={e => e.stopPropagation()}
+                          style={{fontSize:11,color:"#9ca3af",textDecoration:"none",
+                            display:"flex",justifyContent:"space-between"}}>
+                          <span style={{fontWeight:700,
+                            color:SUPER_COLORS[o.supermercado]?.bg==="FFD600"?"#b8860b":
+                              SUPER_COLORS[o.supermercado]?.bg||"#888"}}>
+                            {o.supermercado}
+                          </span>
+                          <span>{fmt(o.precio)}</span>
+                        </a>
+                      ))}
+                    </div>}
                   {p.supermercado === "VEA" && !p.descuento_pct && !p.promocion &&
                     <a href={p.url}
                       target="_blank" rel="noopener noreferrer"
