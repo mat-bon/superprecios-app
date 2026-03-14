@@ -493,23 +493,25 @@ function App() {
                     <span className="promo" style={{background:promoColor(p.promocion)}}>
                       {p.promocion}
                     </span>}
-                  {p.otros_supers && p.otros_supers.length > 0 &&
-                    <div style={{marginTop:4,display:"flex",flexDirection:"column",gap:3}}>
-                      {p.otros_supers.map(o => (
-                        <a key={o.supermercado} href={o.url} target="_blank"
-                          rel="noopener noreferrer"
+                  {p.otros_supers && p.otros_supers.length > 0 && (() => {
+                    const masBarato = p.otros_supers[0];
+                    const esMasBarato = masBarato.precio < p.precio;
+                    return esMasBarato ? (
+                      <div style={{marginTop:6,display:"flex",justifyContent:"flex-end"}}>
+                        <a href={masBarato.url} target="_blank" rel="noopener noreferrer"
                           onClick={e => e.stopPropagation()}
-                          style={{fontSize:11,color:"#9ca3af",textDecoration:"none",
-                            display:"flex",justifyContent:"space-between"}}>
-                          <span style={{fontWeight:700,
-                            color:SUPER_COLORS[o.supermercado]?.bg==="FFD600"?"#b8860b":
-                              SUPER_COLORS[o.supermercado]?.bg||"#888"}}>
-                            {o.supermercado}
-                          </span>
-                          <span>{fmt(o.precio)}</span>
+                          style={{
+                            fontSize:11,textDecoration:"none",
+                            background:"#E8F5E9",color:"#2E7D32",
+                            padding:"3px 10px",borderRadius:20,
+                            display:"flex",gap:6,alignItems:"center",fontWeight:700
+                          }}>
+                          <span>💚 Más barato en {masBarato.supermercado}:</span>
+                          <span>{fmt(masBarato.precio)}</span>
                         </a>
-                      ))}
-                    </div>}
+                      </div>
+                    ) : null;
+                  })()}
                   {p.supermercado === "VEA" && !p.descuento_pct && !p.promocion &&
                     <a href={p.url}
                       target="_blank" rel="noopener noreferrer"
