@@ -196,6 +196,557 @@ function MiniChart({ data }) {
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:H}}>
+      {[0,.5,1].map(t => {
+        const y = PAD.top + innerH * (1 - t);
+        const val = minP + rng * t;
+        return (
+          <g key={t}>
+            <line x1={PAD.left} y1={y} x2={W-PAD.right} y2={y}
+              stroke="#f0f0f0" strokeWidth="1" />
+            <text x={PAD.left - 6} y={y+4} textAnchor="end"
+              fontSize="10" fill="#9ca3af">
+              ${Math.round(val).toLocaleString("es-AR")}
+            </text>
+          </g>
+        );
+      })}
+      <polygon points={areaPoints} fill="#E91E63" fillOpacity="0.08" />
+      <polyline points={points} fill="none" stroke="#E91E63" strokeWidth="2.5"
+        strokeLinejoin="round" strokeLinecap="round" />
+      {data.map((d,i) => (
+        <g key={i}>
+          <circle cx={toX(i)} cy={toY(d.precio)} r="4" fill="#E91E63" />
+          <text x={toX(i)} y={H - 6} textAnchor="middle"
+            fontSize="10" fill="#9ca3af">
+            {fmtFecha(d.scrapeado_en)}
+          </text>
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+function Modal({ producto, onClose }) {
+  const [historial, setHistorial] = React.useState([]);
+  const [loadingH, setLoadingH]   = React.useState(true);
+  const sc = SUPER_COLORS[producto.supermercado] || {bg:"#888",text:"#fff"};
+  const hasOffer = producto.descuento_pct || producto.promocion;
+
+  React.useEffect(() => {
+    fetch(`${API}/productos/${producto.id}/historial`)
+      .then(r => r.json())
+      .then(data => {
+        const sorted = [...data].sort((a,b) =>
+          new Date(a.scrapeado_en) - new Date(b.scrapeado_en));
+        setHistorial(sorted);
+        setLoadingH(false);
+      })
+      .catch(() => setLoadingH(false));
+  }, [producto.id]);
+
+  const minP = historial.length ? Math.min(...historial.map(h=>h.precio)) : null;
+  const maxP = historial.length ? Math.max(...historial.map(h=>h.precio)) : null;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <div className="modal-title">{producto.nombre}</div>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+
+        <div style={{display:"flex",gap:8,marginBottom:14}}>
+          <span className="super-badge" style={{background:sc.bg,color:sc.text}}>
+            {producto.supermercado}
+          </span>
+          <span className="cat-badge">{CAT_LABELS[producto.categoria]||producto.categoria}</span>
+        </div>
+
+        {producto.imagen_url &&
+          <img src={producto.imagen_url} alt={producto.nombre}
+            style={{width:"100%",height:"150px",objectFit:"contain",
+              background:"#f9f9f9",borderRadius:10,marginBottom:14}} />}
+
+        <div style={{fontSize:32,fontWeight:900,color:hasOffer?"#E91E63":"#1a1a1a"}}>
+          {fmt(producto.precio)}
+        </div>
+        {producto.precio_original &&
+          <div style={{display:"flex",gap:8,alignItems:"center",marginTop:4}}>
+            <span style={{color:"#ccc",textDecoration:"line-through",fontSize:13}}>
+              {fmt(producto.precio_original)}
+            </span>
+            {producto.descuento_pct &&
+              <span className="discount">-{producto.descuento_pct}%</span>}
+          </div>}
+        {producto.promocion &&
+          <span className="promo"
+            style={{background:promoColor(producto.promocion),marginTop:6,display:"inline-flex"}}>
+            {producto.promocion}
+          </span>}
+
+        {producto.otros_supers && producto.otros_supers.length > 0 && (
+          <>
+            <div className="modal-section">🏪 En otros supermercados</div>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {producto.otros_supers.map(o => {
+                const osc = SUPER_COLORS[o.supermercado] || {bg:"#888",text:"#fff"};
+                const esMasBarato = o.precio < producto.precio;
+                return (
+                  <a key={o.supermercado} href={o.url} target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display:"flex", justifyContent:"space-between",
+                      alignItems:"center", textDecoration:"none",
+                      padding:"10px 14px", borderRadius:12,
+                      background: esMasBarato ? "#E8F5E9" : "#f9f9f9",
+                      border: esMasBarato ? "1.5px solid #A5D6A7" : "1.5px solid #ebebeb",
+                    }}>
+                    <span className="super-badge" style={{background:osc.bg,color:osc.text}}>
+                      {o.supermercado}
+                    </span>
+                    <span style={{fontWeight:900,fontSize:18,color:esMasBarato?"#2E7D32":"#1a1a1a"}}>
+                      {fmt(o.precio)}
+                      {esMasBarato && <span style={{fontSize:11,marginLeft:6,color:"#2E7D32"}}>💚 más barato</span>}
+                    </span>
+                  </a>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        <div className="modal-section">📈 Historial de precios</div>
+
+        {loadingH ? (
+          <div className="history-empty">Cargando...</div>
+        ) : historial.length < 2 ? (
+          <div className="history-empty">
+            No hay suficiente historial aún — volvé en unos días 📅
+          </div>
+        ) : (
+          <>
+            <MiniChart data={historial} />
+            <div style={{display:"flex",gap:20,marginTop:8,fontSize:12,color:"#6b7280"}}>
+              <span>📉 Mínimo: <strong style={{color:"#4CAF50"}}>{fmt(minP)}</strong></span>
+              <span>📈 Máximo: <strong style={{color:"#E91E63"}}>{fmt(maxP)}</strong></span>
+            </div>
+          </>
+        )}
+
+        <a href={producto.url} target="_blank" rel="noopener noreferrer"
+          className="modal-link">
+          Ver en {producto.supermercado} →
+        </a>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [productos, setProductos]     = React.useState([]);
+  const [stats, setStats]             = React.useState({});
+  const [loading, setLoading]         = React.useState(true);
+  const [tab, setTab]                 = React.useState("todos");
+  const [superFiltro, setSuperFiltro] = React.useState("Todos");
+  const [catFiltro, setCatFiltro]     = React.useState("Todas");
+  const [soloOfertas, setSoloOfertas] = React.useState(false);
+  const [orden, setOrden]             = React.useState("reciente");
+  const [busqueda, setBusqueda]       = React.useState("");
+  const [modalProducto, setModalProducto] = React.useState(null);
+  const [limite, setLimite]               = React.useState(100);
+
+  async function cargar() {
+    setLoading(true);
+    const params = new URLSearchParams();
+    if (superFiltro !== "Todos") params.append("supermercado", superFiltro);
+    if (catFiltro !== "Todas")   params.append("categoria", catFiltro);
+    if (soloOfertas)             params.append("ofertas", "true");
+    if (tab === "favoritos")     params.append("favoritos", "true");
+    if (busqueda)                params.append("busqueda", busqueda);
+
+    const [prods, st] = await Promise.all([
+      fetch(`${API}/productos?${params}`).then(r => r.json()).catch(() => []),
+      fetch(`${API}/stats`).then(r => r.json()).catch(() => ({})),
+    ]);
+    setProductos(Array.isArray(prods) ? prods : []);
+    setStats(st);
+    setLoading(false);
+  }
+
+  React.useEffect(() => { cargar(); }, [tab, superFiltro, catFiltro, soloOfertas]);
+  React.useEffect(() => {
+    const t = setTimeout(cargar, 400);
+    return () => clearTimeout(t);
+  }, [busqueda]);
+
+  async function toggleFav(e, id) {
+    e.stopPropagation();
+    await fetch(`${API}/productos/${id}/favorito`, { method:"POST" });
+    cargar();
+  }
+
+  const productosOrdenados = [...productos].sort((a,b) => {
+    if (orden === "precio-asc")  return (a.precio||0) - (b.precio||0);
+    if (orden === "precio-desc") return (b.precio||0) - (a.precio||0);
+    if (orden === "descuento")   return (b.descuento_pct||0) - (a.descuento_pct||0);
+    return 0;
+  });
+  const productosMostrados = limite === 0 ? productosOrdenados : productosOrdenados.slice(0, limite);
+
+  const supers = ["Todos","VEA","Carrefour","MasOnline","Dino"];
+  const cats   = ["Todas", ...Object.keys(CAT_LABELS)];
+
+  return (
+    <div>
+      {modalProducto &&
+        <Modal producto={modalProducto} onClose={() => setModalProducto(null)} />}
+
+      <div className="header">
+        <div>
+          <h1>🛒 <span>Super</span>Precios AR</h1>
+          <p>VEA · Carrefour · MasOnline · Dino</p>
+        </div>
+        <div className="stats">
+          <div className="stat">
+            <div className="stat-val" style={{color:"#FFD600"}}>{stats.total_productos||0}</div>
+            <div className="stat-lbl">Productos</div>
+          </div>
+          <div className="stat">
+            <div className="stat-val" style={{color:"#4CAF50"}}>{stats.favoritos||0}</div>
+            <div className="stat-lbl">Favoritos</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="container">
+        <div className="tabs">
+          {[["todos","Todos los productos"],["favoritos","Mis favoritos"]].map(([key,label]) => (
+            <button key={key} className={`tab ${tab===key?"active":""}`}
+              onClick={() => setTab(key)}>{label}
+              {key==="favoritos" && stats.favoritos > 0 &&
+                <span style={{marginLeft:6,background:"#E91E63",color:"#fff",
+                  borderRadius:10,fontSize:10,padding:"1px 6px"}}>
+                  {stats.favoritos}
+                </span>}
+            </button>
+          ))}
+        </div>
+
+        <div className="search">
+          <span>🔍</span>
+          <input value={busqueda} onChange={e => setBusqueda(e.target.value)}
+            placeholder="Buscar producto en todos los supermercados..." />
+        </div>
+
+        <div className="filters">
+          <div className="filter-row">
+            <span className="filter-label">Supermercado</span>
+            {supers.map(s => {
+              const c = SUPER_COLORS[s];
+              return (
+                <button key={s} className={`pill ${superFiltro===s?"active":""}`}
+                  style={superFiltro===s?{background:c?.bg||"#1a1a1a",color:c?.text||"#fff"}:{}}
+                  onClick={() => setSuperFiltro(s)}>{s}</button>
+              );
+            })}
+          </div>
+          <div className="filter-row">
+            <span className="filter-label">Categoría</span>
+            {cats.map(c => (
+              <button key={c} className={`pill ${catFiltro===c?"active":""}`}
+                style={catFiltro===c?{background:"#1a1a1a",color:"#fff"}:{}}
+                onClick={() => setCatFiltro(c)}>
+                {CAT_LABELS[c]||"Todas"}
+              </button>
+            ))}
+          </div>
+          <div className="filter-row">
+            <button className={`pill ${soloOfertas?"active":""}`}
+              style={soloOfertas?{background:"#E91E63",color:"#fff"}:{}}
+              onClick={() => setSoloOfertas(!soloOfertas)}>
+              Solo ofertas y promos
+            </button>
+          </div>
+          <div className="filter-row">
+            <span className="filter-label">Ordenar por</span>
+            {[["reciente","Más reciente"],["precio-asc","Precio ↑"],
+              ["precio-desc","Precio ↓"],["descuento","Mayor descuento"]].map(([key,label]) => (
+              <button key={key} className={`pill ${orden===key?"active":""}`}
+                style={orden===key?{background:"#1a1a1a",color:"#fff"}:{}}
+                onClick={() => setOrden(key)}>{label}</button>
+            ))}
+          </div>
+        </div>
+
+        <div className="result-count" style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <span>{loading ? "Cargando..." : `${productos.length} producto${productos.length!==1?"s":""} · mostrando ${Math.min(limite||productos.length, productos.length)}`}</span>
+          <div style={{display:"flex",gap:6,alignItems:"center"}}>
+            <span style={{fontSize:11,color:"#9ca3af"}}>Mostrar:</span>
+            {[[100,"100"],[200,"200"],[500,"500"],[1000,"1000"],[0,"Todos"]].map(([val,label]) => (
+              <button key={val} onClick={() => setLimite(val)}
+                className={`pill ${limite===val?"active":""}`}
+                style={{
+                  padding:"3px 10px", fontSize:11,
+                  ...(limite===val ? {background:"#1a1a1a",color:"#fff",border:"none"} : {})
+                }}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {productos.length === 0 && !loading ? (
+          <div className="empty">
+            <div>🧐</div>
+            <p style={{fontSize:16,marginTop:12}}>No hay productos con esos filtros</p>
+          </div>
+        ) : (
+          <div className="grid">
+            {productosMostrados.map(p => {
+              const hasOffer = p.descuento_pct || p.promocion;
+              const sc = SUPER_COLORS[p.supermercado] || {bg:"#888",text:"#fff"};
+              return (
+                <div key={p.id} className={`card ${hasOffer?"oferta":""}`}
+                  onClick={() => setModalProducto(p)}>
+                  <button className="fav-btn" onClick={e => toggleFav(e, p.id)}
+                    style={{filter:p.favorito?"none":"grayscale(1) opacity(.35)"}}>
+                    {p.favorito ? "❤️" : "🤍"}
+                  </button>
+                  <div className="badges">
+                    <span className="super-badge"
+                      style={{background:sc.bg,color:sc.text}}>{p.supermercado}</span>
+                    <span className="cat-badge">{CAT_LABELS[p.categoria]||p.categoria}</span>
+                    {p.scrapeado_en &&
+                      <span className="time-badge">{relTime(p.scrapeado_en)}</span>}
+                  </div>
+                  {p.imagen_url &&
+                    <img src={p.imagen_url} alt={p.nombre}
+                      style={{width:"100%",height:"140px",objectFit:"contain",
+                        borderRadius:"8px",background:"#f9f9f9"}} />}
+                  <div className="product-name">{p.nombre}</div>
+                  <div className="prices">
+                    <span className={`price ${hasOffer?"oferta":"normal"}`}>{fmt(p.precio)}</span>
+                    {p.precio_original &&
+                      <span className="price-original">{fmt(p.precio_original)}</span>}
+                    {p.descuento_pct && !p.promocion &&
+                      <span className="discount">-{p.descuento_pct}%</span>}
+                  </div>
+                  {p.promocion &&
+                    <span className="promo" style={{background:promoColor(p.promocion)}}>
+                      {p.promocion}
+                    </span>}
+                  {p.otros_supers && p.otros_supers.length > 0 && (() => {
+                    const ordenados = [...p.otros_supers].sort((a,b) => a.precio - b.precio);
+                    return (
+                      <div style={{marginTop:6,display:"flex",flexDirection:"column",gap:4}}>
+                        {ordenados.map((o, i) => {
+                          const esMasBarato = o.precio < p.precio;
+                          const osc = SUPER_COLORS[o.supermercado] || {bg:"#888",text:"#fff"};
+                          return (
+                            <a key={o.supermercado} href={o.url} target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={e => e.stopPropagation()}
+                              style={{
+                                fontSize:11, textDecoration:"none",
+                                display:"flex", justifyContent:"space-between",
+                                alignItems:"center", padding:"4px 8px",
+                                borderRadius:8,
+                                background: esMasBarato ? "#E8F5E9" : "#f9f9f9",
+                                border: esMasBarato ? "1px solid #A5D6A7" : "1px solid #ebebeb",
+                              }}>
+                              <span style={{fontWeight:700,color:osc.bg==="FFD600"?"#b8860b":osc.bg}}>
+                                {i===0 && esMasBarato ? "💚 " : ""}{o.supermercado}
+                              </span>
+                              <span style={{fontWeight:700,color:esMasBarato?"#2E7D32":"#555"}}>
+                                {fmt(o.precio)}
+                              </span>
+                            </a>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="footer">
+          <strong>Actualización automática:</strong> todos los días a las 08:00 y 20:00 hs.
+          Tocá el corazón de cualquier producto para agregarlo a favoritos.
+          Clickeá cualquier producto para ver el historial de precios.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>      cursor:pointer; transition:all .15s; white-space:nowrap; }
+    .pill.active { border:none; color:#fff; }
+
+    .search { position:relative; margin-bottom:14px; }
+    .search span { position:absolute; left:14px; top:50%; transform:translateY(-50%); }
+    .search input { width:100%; padding:12px 14px 12px 40px; font-size:14px;
+      border:1.5px solid #e5e7eb; border-radius:12px; background:#fff;
+      outline:none; font-family:inherit; }
+    .search input:focus { border-color:#FFD600; }
+
+    .result-count { font-size:13px; color:#9ca3af; margin-bottom:12px; }
+
+    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; }
+
+    .card { background:#fff; border-radius:16px; padding:16px 18px;
+      border:1.5px solid #ebebeb; box-shadow:0 2px 10px rgba(0,0,0,.05);
+      display:flex; flex-direction:column; gap:10px; position:relative;
+      transition:all .18s; cursor:pointer; }
+    .card:hover { transform:translateY(-3px); box-shadow:0 8px 28px rgba(0,0,0,.12); }
+    .card.oferta { border-color:#FFD600; box-shadow:0 4px 16px rgba(255,214,0,.15); }
+
+    .fav-btn { position:absolute; top:12px; right:12px; background:none;
+      border:none; cursor:pointer; font-size:18px; padding:2px;
+      transition:all .15s; z-index:2; }
+
+    .badges { display:flex; gap:5px; flex-wrap:wrap; padding-right:30px; }
+    .super-badge { font-size:10px; font-weight:800; padding:2px 8px;
+      border-radius:20px; letter-spacing:.5px; }
+    .cat-badge { font-size:10px; color:#999; padding:2px 7px;
+      background:#f5f5f5; border-radius:20px; }
+    .time-badge { font-size:10px; color:#bbb; padding:2px 7px;
+      background:#f9f9f9; border-radius:20px; margin-left:auto; }
+
+    .product-name { font-size:13.5px; font-weight:600; color:#1a1a1a;
+      line-height:1.4; padding-right:4px; }
+
+    .prices { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+    .price { font-size:24px; font-weight:900; letter-spacing:-1px; }
+    .price.normal { color:#1a1a1a; }
+    .price.oferta { color:#E91E63; }
+    .price-original { font-size:13px; color:#ccc; text-decoration:line-through; }
+    .discount { font-size:12px; font-weight:800; color:#E91E63;
+      background:#FCE4EC; padding:2px 7px; border-radius:10px; }
+
+    .promo { display:inline-flex; align-items:center; gap:3px;
+      color:#fff; font-size:10px; font-weight:800; padding:3px 8px;
+      border-radius:20px; letter-spacing:.4px; text-transform:uppercase; }
+
+    .empty { text-align:center; padding:60px 20px; color:#d1d5db;
+      background:#fff; border-radius:16px; }
+    .empty div { font-size:56px; }
+
+    .tabs { display:flex; border-bottom:2px solid #e5e7eb;
+      background:#fff; border-radius:12px 12px 0 0; overflow:hidden;
+      box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:20px; }
+    .tab { padding:12px 24px; font-size:13.5px; font-weight:700;
+      border:none; background:none; cursor:pointer; color:#9ca3af;
+      border-bottom:3px solid transparent; margin-bottom:-2px;
+      transition:all .15s; flex:1; }
+    .tab.active { color:#111827; border-bottom-color:#FFD600; }
+
+    .footer { margin-top:36px; padding:18px 22px; background:#111827;
+      border-radius:16px; color:#6b7280; font-size:12px; line-height:1.8; }
+    .footer strong { color:#FFD600; }
+
+    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6);
+      z-index:100; display:flex; align-items:center; justify-content:center;
+      padding:16px; }
+    .modal { background:#fff; border-radius:20px; width:100%; max-width:520px;
+      max-height:90vh; overflow-y:auto; padding:24px;
+      box-shadow:0 20px 60px rgba(0,0,0,.3); }
+    .modal-header { display:flex; justify-content:space-between; align-items:flex-start;
+      gap:12px; margin-bottom:16px; }
+    .modal-title { font-size:15px; font-weight:700; color:#1a1a1a; line-height:1.4; }
+    .modal-close { background:none; border:none; font-size:22px; cursor:pointer;
+      color:#9ca3af; flex-shrink:0; }
+    .modal-close:hover { color:#1a1a1a; }
+    .modal-section { font-size:11px; font-weight:700; color:#9ca3af;
+      text-transform:uppercase; letter-spacing:.5px; margin:20px 0 10px; }
+    .modal-link { display:inline-flex; align-items:center; gap:6px;
+      margin-top:16px; padding:10px 18px; background:#111827; color:#fff;
+      border-radius:10px; font-size:13px; font-weight:700; text-decoration:none; }
+    .modal-link:hover { background:#374151; }
+    .history-empty { text-align:center; padding:24px; color:#d1d5db; font-size:13px; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+const API = "https://web-production-32c3f.up.railway.app";
+
+const SUPER_COLORS = {
+  VEA:         { bg:"#FFD600", text:"#000" },
+  Carrefour:   { bg:"#0066CC", text:"#fff" },
+  MasOnline:   { bg:"#E4002B", text:"#fff" },
+  Dino:        { bg:"#2E7D32", text:"#fff" },
+};
+
+const CAT_LABELS = {
+  "almacen":                "Almacén",
+  "bebidas":                "Bebidas",
+  "lacteos":                "Lácteos",
+  "limpieza":               "Limpieza",
+  "perfumeria":             "Perfumería",
+  "panaderia":              "Panadería",
+  "carnes":                 "Carnes",
+  "congelados":             "Congelados",
+  "frescos":                "Frescos",
+  "frutas-y-verduras":      "Frutas y Verduras",
+  "quesos-y-fiambres":      "Quesos y Fiambres",
+  "panaderia-y-pasteleria": "Panadería y Pastelería",
+  "desayuno":               "Desayuno y Merienda",
+};
+
+function fmt(n) {
+  return n != null ? "$" + Math.round(n).toLocaleString("es-AR") : "—";
+}
+
+function relTime(ts) {
+  if (!ts) return null;
+  const d = new Date(ts.replace(" ","T")), now = new Date();
+  const mins = Math.round((now - d) / 60000);
+  if (mins < 60) return `hace ${mins}m`;
+  if (mins < 1440) return `hace ${Math.round(mins/60)}h`;
+  return `hace ${Math.round(mins/1440)}d`;
+}
+
+function fmtFecha(ts) {
+  if (!ts) return "";
+  const d = new Date(ts.replace(" ","T"));
+  return d.toLocaleDateString("es-AR", { day:"2-digit", month:"2-digit" });
+}
+
+function promoColor(promo) {
+  if (!promo) return "#1565C0";
+  if (/\dx\d/.test(promo)) return "#FF6B00";
+  if (promo.includes("unidad")) return "#7B1FA2";
+  return "#C62828";
+}
+
+function MiniChart({ data }) {
+  if (!data || data.length < 2) return null;
+  const W = 460, H = 140, PAD = { top:10, right:10, bottom:24, left:60 };
+  const innerW = W - PAD.left - PAD.right;
+  const innerH = H - PAD.top - PAD.bottom;
+  const precios = data.map(d => d.precio);
+  const minP = Math.min(...precios);
+  const maxP = Math.max(...precios);
+  const rng = maxP - minP || 1;
+  const xStep = innerW / (data.length - 1);
+  const toX = i => PAD.left + i * xStep;
+  const toY = v => PAD.top + innerH - ((v - minP) / rng) * innerH;
+  const points = data.map((d,i) => `${toX(i)},${toY(d.precio)}`).join(" ");
+  const areaPoints = [
+    `${toX(0)},${PAD.top + innerH}`,
+    ...data.map((d,i) => `${toX(i)},${toY(d.precio)}`),
+    `${toX(data.length-1)},${PAD.top + innerH}`
+  ].join(" ");
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:H}}>
       {/* Grid lines */}
       {[0,.5,1].map(t => {
         const y = PAD.top + innerH * (1 - t);
