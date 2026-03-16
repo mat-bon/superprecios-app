@@ -345,6 +345,18 @@ function Modal({ producto, onClose }) {
 
 function Paginacion({ paginaActual, totalPaginas, onCambiar }) {
   if (totalPaginas <= 1) return null;
+  const [inputVal, setInputVal] = React.useState(String(paginaActual));
+
+  React.useEffect(() => {
+    setInputVal(String(paginaActual));
+  }, [paginaActual]);
+
+  function irAPagina() {
+    const n = parseInt(inputVal);
+    if (!isNaN(n) && n >= 1 && n <= totalPaginas) onCambiar(n);
+    else setInputVal(String(paginaActual));
+  }
+
   const items = [];
   const delta = 2;
   let prev = null;
@@ -355,6 +367,7 @@ function Paginacion({ paginaActual, totalPaginas, onCambiar }) {
       prev = i;
     }
   }
+
   return (
     <div style={{display:"flex",justifyContent:"center",alignItems:"center",
       gap:6,marginTop:24,flexWrap:"wrap"}}>
@@ -376,6 +389,21 @@ function Paginacion({ paginaActual, totalPaginas, onCambiar }) {
           </button>
         )
       )}
+      <div style={{display:"flex",alignItems:"center",gap:6,marginLeft:4}}>
+        <span style={{fontSize:12,color:"#9ca3af"}}>Ir a:</span>
+        <input
+          type="number"
+          min="1"
+          max={totalPaginas}
+          value={inputVal}
+          onChange={e => setInputVal(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && irAPagina()}
+          onBlur={irAPagina}
+          style={{width:52,padding:"5px 8px",borderRadius:10,border:"1.5px solid #e0e0e0",
+            fontSize:13,fontWeight:700,textAlign:"center",fontFamily:"inherit",outline:"none"}}
+        />
+        <span style={{fontSize:12,color:"#9ca3af"}}>de {totalPaginas}</span>
+      </div>
       <button className="pill" onClick={() => onCambiar(paginaActual + 1)}
         disabled={paginaActual === totalPaginas}
         style={{padding:"6px 14px",opacity:paginaActual===totalPaginas?0.4:1}}>
