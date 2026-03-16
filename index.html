@@ -288,6 +288,33 @@ function Modal({ producto, onClose }) {
             {producto.promocion}
           </span>}
 
+        {producto.otros_supers && producto.otros_supers.length > 0 && (
+          <>
+            <div className="modal-section">🏪 En otros supermercados</div>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {[...producto.otros_supers].sort((a,b) => a.precio - b.precio).map(o => {
+                const osc = SUPER_COLORS[o.supermercado] || {bg:"#888",text:"#fff"};
+                const esMasBarato = o.precio < producto.precio;
+                return (
+                  <a key={o.supermercado} href={o.url} target="_blank" rel="noopener noreferrer"
+                    style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                      textDecoration:"none",padding:"10px 14px",borderRadius:12,
+                      background:esMasBarato?"#E8F5E9":"#f9f9f9",
+                      border:esMasBarato?"1.5px solid #A5D6A7":"1.5px solid #ebebeb"}}>
+                    <span className="super-badge" style={{background:osc.bg,color:osc.text}}>
+                      {o.supermercado}
+                    </span>
+                    <span style={{fontWeight:900,fontSize:18,color:esMasBarato?"#2E7D32":"#1a1a1a"}}>
+                      {fmt(o.precio)}
+                      {esMasBarato && <span style={{fontSize:11,marginLeft:6,color:"#2E7D32"}}>💚 más barato</span>}
+                    </span>
+                  </a>
+                );
+              })}
+            </div>
+          </>
+        )}
+
         <div className="modal-section">📈 Historial de precios</div>
 
         {loadingH ? (
