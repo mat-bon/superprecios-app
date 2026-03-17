@@ -421,7 +421,7 @@ function App() {
   const [superFiltro, setSuperFiltro] = React.useState("Todos");
   const [catFiltro, setCatFiltro]     = React.useState("Todas");
   const [soloOfertas, setSoloOfertas] = React.useState(false);
-  const [orden, setOrden]             = React.useState("reciente");
+  const [orden, setOrden]             = React.useState("popular");
   const [busqueda, setBusqueda]       = React.useState("");
   const [modalProducto, setModalProducto] = React.useState(null);
   const [porPagina, setPorPagina]         = React.useState(25);
@@ -459,9 +459,19 @@ function App() {
   }
 
   const productosOrdenados = [...productos].sort((a,b) => {
+    if (orden === "popular") {
+      const pa = a.posicion != null ? a.posicion : 999999;
+      const pb = b.posicion != null ? b.posicion : 999999;
+      return pa - pb;
+    }
     if (orden === "precio-asc")  return (a.precio||0) - (b.precio||0);
     if (orden === "precio-desc") return (b.precio||0) - (a.precio||0);
     if (orden === "descuento")   return (b.descuento_pct||0) - (a.descuento_pct||0);
+    if (orden === "reciente") {
+      const da = a.scrapeado_en ? new Date(a.scrapeado_en) : 0;
+      const db = b.scrapeado_en ? new Date(b.scrapeado_en) : 0;
+      return db - da;
+    }
     return 0;
   });
   const totalPaginas    = porPagina === 0 ? 1 : Math.ceil(productosOrdenados.length / porPagina);
@@ -554,8 +564,8 @@ function App() {
           </div>
           <div className="filter-row">
             <span className="filter-label">Ordenar por</span>
-            {[["reciente","Más reciente"],["precio-asc","Precio ↑"],
-              ["precio-desc","Precio ↓"],["descuento","Mayor descuento"]].map(([key,label]) => (
+            {[["popular","Más populares"],["precio-asc","Precio ↑"],
+              ["precio-desc","Precio ↓"],["descuento","Mayor descuento"],["reciente","Más reciente"]].map(([key,label]) => (
               <button key={key} className={`pill ${orden===key?"active":""}`}
                 style={orden===key?{background:"#1a1a1a",color:"#fff"}:{}}
                 onClick={() => setOrden(key)}>{label}</button>
