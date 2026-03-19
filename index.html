@@ -133,21 +133,127 @@ const SUPER_COLORS = {
   Dino:        { bg:"#2E7D32", text:"#fff" },
 };
 
-const CAT_LABELS = {
-  "almacen":                "Almacén",
-  "bebidas":                "Bebidas",
-  "lacteos":                "Lácteos",
-  "limpieza":               "Limpieza",
-  "perfumeria":             "Perfumería",
-  "panaderia":              "Panadería",
-  "carnes":                 "Carnes",
-  "congelados":             "Congelados",
-  "frescos":                "Frescos",
-  "frutas-y-verduras":      "Frutas y Verduras",
-  "quesos-y-fiambres":      "Quesos y Fiambres",
-  "panaderia-y-pasteleria": "Panadería y Pastelería",
-  "desayuno":               "Desayuno y Merienda",
+const CATEGORIAS = {
+  "almacen": {
+    label: "Almacén",
+    subs: {
+      "aceites-y-vinagres":        "Aceites y Vinagres",
+      "aderezos-salsas-y-especias":"Aderezos, Salsas y Especias",
+      "arroz-pastas-y-legumbres":  "Arroz, Pastas y Legumbres",
+      "caldos-sopas-y-pure":       "Caldos, Sopas y Puré",
+      "desayuno-y-merienda":       "Desayuno y Merienda",
+      "enlatados-y-conservas":     "Enlatados y Conservas",
+      "golosinas-y-chocolates":    "Golosinas y Chocolates",
+      "harinas":                   "Harinas",
+      "panaderia":                 "Panadería",
+      "reposteria-y-postres":      "Repostería y Postres",
+      "snacks":                    "Snacks",
+    }
+  },
+  "carnes": {
+    label: "Carnes",
+    subs: {
+      "carne-vacuna":       "Carne Vacuna",
+      "carne-cerdo":        "Carne Cerdo",
+      "pollo":              "Pollo",
+      "embutidos-y-achuras":"Embutidos y Achuras",
+      "carbon-y-lena":      "Carbón y Leña",
+    }
+  },
+  "bebidas": {
+    label: "Bebidas",
+    subs: {
+      "aguas":                          "Aguas",
+      "bebidas-blancas-licores-y-whiskys":"Bebidas Blancas, Licores y Whiskys",
+      "vinos-y-espumantes":             "Vinos y Espumantes",
+      "cervezas":                       "Cervezas",
+      "fernet-y-aperitivos":            "Fernet y Aperitivos",
+      "isotonicas-y-energizantes":      "Isotónicas y Energizantes",
+      "gaseosas":                       "Gaseosas",
+      "jugos":                          "Jugos",
+      "hielo":                          "Hielo",
+    }
+  },
+  "frutas-verduras-y-huevos": {
+    label: "Frutas, Verduras y Huevos",
+    subs: {
+      "frutas":      "Frutas",
+      "frutos-secos":"Frutos Secos",
+      "verduras":    "Verduras",
+      "huevos":      "Huevos",
+    }
+  },
+  "lacteos-y-frescos": {
+    label: "Lácteos y Frescos",
+    subs: {
+      "lacteos":              "Lácteos",
+      "dulces":               "Dulces",
+      "quesos":               "Quesos",
+      "fiambres":             "Fiambres",
+      "pizzas-tapas-y-pastas":"Pizzas, Tapas y Pastas",
+    }
+  },
+  "congelados": {
+    label: "Congelados",
+    subs: {
+      "hamburguesas":      "Hamburguesas",
+      "helados-y-postres": "Helados y Postres",
+      "pescados-y-mariscos":"Pescados y Mariscos",
+      "pollo-y-rebozados": "Pollo y Rebozados",
+      "papas-y-verduras":  "Papas y Verduras",
+      "comidas-preparadas":"Comidas Preparadas",
+      "frutas-congeladas": "Frutas",
+    }
+  },
+  "perfumeria": {
+    label: "Perfumería",
+    subs: {
+      "cuidado-capilar":      "Cuidado Capilar",
+      "cuidado-dental":       "Cuidado Dental",
+      "cuidado-de-la-piel":   "Cuidado de la Piel",
+      "cuidado-personal":     "Cuidado Personal",
+      "cuidado-de-la-mujer":  "Cuidado de la Mujer",
+      "farmacia":             "Farmacia",
+    }
+  },
+  "limpieza": {
+    label: "Limpieza",
+    subs: {
+      "accesorios-de-limpieza":  "Accesorios de Limpieza",
+      "desodorantes-de-ambiente":"Desodorantes de Ambiente",
+      "lavandinas":              "Lavandinas",
+      "limpieza-de-bano":        "Limpieza de Baño",
+      "limpieza-de-cocina":      "Limpieza de Cocina",
+      "limpieza-de-hogar":       "Limpieza de Hogar",
+      "limpieza-de-ropa":        "Limpieza de Ropa",
+      "insecticidas":            "Insecticidas",
+      "papeles":                 "Papeles",
+    }
+  },
+  "mundo-bebe": {
+    label: "Mundo Bebé",
+    subs: {
+      "accesorios-para-bebe":"Accesorios para Bebé",
+      "alimentos-y-leches":  "Alimentos y Leches",
+      "panales-e-higiene":   "Pañales e Higiene",
+    }
+  },
+  "mascotas": {
+    label: "Mascotas",
+    subs: {
+      "alimentos":          "Alimentos",
+      "accesorios-e-higiene":"Accesorios e Higiene",
+    }
+  },
 };
+
+// Helper para labels
+const CAT_LABELS = Object.fromEntries(
+  Object.entries(CATEGORIAS).map(([k,v]) => [k, v.label])
+);
+const SUBCAT_LABELS = Object.fromEntries(
+  Object.values(CATEGORIAS).flatMap(v => Object.entries(v.subs))
+);
 
 function fmt(n) {
   return n != null ? "$" + Math.round(n).toLocaleString("es-AR") : "—";
@@ -263,7 +369,7 @@ function Modal({ producto, onClose }) {
           <span className="super-badge" style={{background:sc.bg,color:sc.text}}>
             {producto.supermercado}
           </span>
-          <span className="cat-badge">{CAT_LABELS[producto.categoria]||producto.categoria}</span>
+          <span className="cat-badge">{SUBCAT_LABELS[producto.subcategoria] || CAT_LABELS[producto.categoria] || producto.categoria}</span>
         </div>
 
         {producto.imagen_url &&
@@ -420,6 +526,7 @@ function App() {
   const [tab, setTab]                 = React.useState("todos");
   const [superFiltro, setSuperFiltro] = React.useState("Todos");
   const [catFiltro, setCatFiltro]     = React.useState("Todas");
+  const [subcatFiltro, setSubcatFiltro] = React.useState("Todas");
   const [soloOfertas, setSoloOfertas] = React.useState(false);
   const [orden, setOrden]             = React.useState("popular");
   const [busqueda, setBusqueda]       = React.useState("");
@@ -432,6 +539,7 @@ function App() {
     const params = new URLSearchParams();
     if (superFiltro !== "Todos") params.append("supermercado", superFiltro);
     if (catFiltro !== "Todas")   params.append("categoria", catFiltro);
+    if (subcatFiltro !== "Todas") params.append("subcategoria", subcatFiltro);
     if (soloOfertas)             params.append("ofertas", "true");
     if (tab === "favoritos")     params.append("favoritos", "true");
     if (busqueda)                params.append("busqueda", busqueda);
@@ -446,7 +554,7 @@ function App() {
     setPagina(1);
   }
 
-  React.useEffect(() => { cargar(); }, [tab, superFiltro, catFiltro, soloOfertas]);
+  React.useEffect(() => { cargar(); }, [tab, superFiltro, catFiltro, subcatFiltro, soloOfertas]);
   React.useEffect(() => {
     const t = setTimeout(cargar, 400);
     return () => clearTimeout(t);
@@ -488,8 +596,16 @@ function App() {
     setPagina(1);
   }
 
+  function handleCatFiltro(cat) {
+    setCatFiltro(cat);
+    setSubcatFiltro("Todas");
+  }
+
   const supers = ["Todos","VEA","Carrefour","MasOnline","Dino"];
-  const cats   = ["Todas", ...Object.keys(CAT_LABELS)];
+  const cats   = ["Todas", ...Object.keys(CATEGORIAS)];
+  const subcats = catFiltro !== "Todas" && CATEGORIAS[catFiltro]
+    ? ["Todas", ...Object.keys(CATEGORIAS[catFiltro].subs)]
+    : [];
 
   return (
     <div>
@@ -550,11 +666,28 @@ function App() {
             {cats.map(c => (
               <button key={c} className={`pill ${catFiltro===c?"active":""}`}
                 style={catFiltro===c?{background:"#1a1a1a",color:"#fff"}:{}}
-                onClick={() => setCatFiltro(c)}>
+                onClick={() => handleCatFiltro(c)}>
                 {CAT_LABELS[c]||"Todas"}
               </button>
             ))}
           </div>
+          {subcats.length > 0 && (
+            <div className="filter-row">
+              <span className="filter-label">Subcategoría</span>
+              <select
+                value={subcatFiltro}
+                onChange={e => setSubcatFiltro(e.target.value)}
+                style={{padding:"6px 12px",borderRadius:24,fontSize:12.5,fontWeight:700,
+                  border:"1.5px solid #e0e0e0",background:"#fff",color:"#555",
+                  cursor:"pointer",outline:"none",fontFamily:"inherit"}}>
+                {subcats.map(s => (
+                  <option key={s} value={s}>
+                    {s === "Todas" ? "Todas las subcategorías" : SUBCAT_LABELS[s] || s}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="filter-row">
             <button className={`pill ${soloOfertas?"active":""}`}
               style={soloOfertas?{background:"#E91E63",color:"#fff"}:{}}
@@ -611,7 +744,7 @@ function App() {
                   <div className="badges">
                     <span className="super-badge"
                       style={{background:sc.bg,color:sc.text}}>{p.supermercado}</span>
-                    <span className="cat-badge">{CAT_LABELS[p.categoria]||p.categoria}</span>
+                    <span className="cat-badge">{SUBCAT_LABELS[p.subcategoria] || CAT_LABELS[p.categoria] || p.categoria}</span>
                     {p.scrapeado_en &&
                       <span className="time-badge">{relTime(p.scrapeado_en)}</span>}
                   </div>
