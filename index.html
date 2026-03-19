@@ -704,7 +704,7 @@ function App() {
 
       <div className="header">
         <div>
-          <h1>🛒 <span>Super</span>Precios AR</h1>
+          <h1 style={{cursor:"pointer"}} onClick={() => { setTab("todos"); setSuperFiltro("Todos"); setCatFiltro("Todas"); setSubcatFiltro("Todas"); setBusqueda(""); setSoloOfertas(false); window.scrollTo({top:0,behavior:"smooth"}); }}>🛒 <span>Super</span>Precios AR</h1>
           <p>VEA · Carrefour · MásOnline · Dino</p>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:12}}>
@@ -725,11 +725,11 @@ function App() {
             </button>
           )}
         <div className="stats">
-          <div className="stat">
+          <div className="stat" style={{cursor:"pointer"}} onClick={() => { setTab("todos"); setSuperFiltro("Todos"); setCatFiltro("Todas"); setSubcatFiltro("Todas"); setBusqueda(""); setSoloOfertas(false); window.scrollTo({top:0,behavior:"smooth"}); }}>
             <div className="stat-val" style={{color:"#FFD600"}}>{stats.total_productos||0}</div>
             <div className="stat-lbl">Productos</div>
           </div>
-          <div className="stat">
+          <div className="stat" style={{cursor:"pointer"}} onClick={() => { setTab("favoritos"); window.scrollTo({top:0,behavior:"smooth"}); }}>
             <div className="stat-val" style={{color:"#4CAF50"}}>{stats.favoritos||0}</div>
             <div className="stat-lbl">Favoritos</div>
           </div>
