@@ -118,6 +118,14 @@
       border-radius:10px; font-size:13px; font-weight:700; text-decoration:none; }
     .modal-link:hover { background:#374151; }
     .history-empty { text-align:center; padding:24px; color:#d1d5db; font-size:13px; }
+    .auth-input { width:100%; padding:11px 14px; font-size:14px; border:1.5px solid #e5e7eb;
+      border-radius:10px; outline:none; font-family:inherit; margin-bottom:10px; }
+    .auth-input:focus { border-color:#FFD600; }
+    .auth-btn { width:100%; padding:12px; background:#111827; color:#fff; border:none;
+      border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; }
+    .auth-btn:hover { background:#374151; }
+    .auth-link { background:none; border:none; color:#6b7280; font-size:13px;
+      cursor:pointer; text-decoration:underline; font-family:inherit; margin-top:8px; }
   </style>
 </head>
 <body>
@@ -519,6 +527,66 @@ function Paginacion({ paginaActual, totalPaginas, onCambiar }) {
   );
 }
 
+
+function AuthModal({ onClose, onLogin }) {
+  const [modo, setModo]         = React.useState("login");
+  const [email, setEmail]       = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [error, setError]       = React.useState("");
+  const [loading, setLoading]   = React.useState(false);
+  const [msg, setMsg]           = React.useState("");
+
+  async function handleSubmit() {
+    setError(""); setMsg(""); setLoading(true);
+    const endpoint = modo === "login" ? "/auth/login" : "/auth/register";
+    try {
+      const res = await fetch(`${API}${endpoint}`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({email, password})
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Error");
+      if (modo === "login") {
+        onLogin(data.access_token, data.user);
+        onClose();
+      } else {
+        setMsg("¡Registro exitoso! Revisá tu email para confirmar tu cuenta.");
+        setModo("login");
+      }
+    } catch(e) {
+      setError(e.message);
+    }
+    setLoading(false);
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" style={{maxWidth:400}} onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <div className="modal-title">{modo === "login" ? "Iniciar sesión" : "Crear cuenta"}</div>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+        {msg && <div style={{background:"#E8F5E9",color:"#2E7D32",padding:"10px 14px",borderRadius:10,marginBottom:12,fontSize:13}}>{msg}</div>}
+        {error && <div style={{background:"#FCE4EC",color:"#C62828",padding:"10px 14px",borderRadius:10,marginBottom:12,fontSize:13}}>{error}</div>}
+        <input className="auth-input" type="email" placeholder="Email"
+          value={email} onChange={e => setEmail(e.target.value)} />
+        <input className="auth-input" type="password" placeholder="Contraseña"
+          value={password} onChange={e => setPassword(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && handleSubmit()} />
+        <button className="auth-btn" onClick={handleSubmit} disabled={loading}>
+          {loading ? "Cargando..." : modo === "login" ? "Iniciar sesión" : "Crear cuenta"}
+        </button>
+        <div style={{textAlign:"center",marginTop:12}}>
+          <button className="auth-link" onClick={() => {setModo(modo==="login"?"register":"login"); setError(""); setMsg("");}}>
+            {modo === "login" ? "¿No tenés cuenta? Registrate" : "¿Ya tenés cuenta? Iniciá sesión"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [productos, setProductos]     = React.useState([]);
   const [stats, setStats]             = React.useState({});
@@ -533,6 +601,26 @@ function App() {
   const [modalProducto, setModalProducto] = React.useState(null);
   const [porPagina, setPorPagina]         = React.useState(25);
   const [pagina, setPagina]               = React.useState(1);
+  const [usuario, setUsuario]             = React.useState(() => {
+    try { return JSON.parse(localStorage.getItem("sp_user")); } catch { return null; }
+  });
+  const [token, setToken]                 = React.useState(() => localStorage.getItem("sp_token") || null);
+  const [showAuth, setShowAuth]           = React.useState(false);
+
+  function handleLogin(access_token, user) {
+    setToken(access_token);
+    setUsuario(user);
+    localStorage.setItem("sp_token", access_token);
+    localStorage.setItem("sp_user", JSON.stringify(user));
+    cargar();
+  }
+  function handleLogout() {
+    setToken(null);
+    setUsuario(null);
+    localStorage.removeItem("sp_token");
+    localStorage.removeItem("sp_user");
+    cargar();
+  }
 
   async function cargar() {
     setLoading(true);
@@ -545,8 +633,8 @@ function App() {
     if (busqueda)                params.append("busqueda", busqueda);
 
     const [prods, st] = await Promise.all([
-      fetch(`${API}/productos?${params}`).then(r => r.json()).catch(() => []),
-      fetch(`${API}/stats`).then(r => r.json()).catch(() => ({})),
+      fetch(`${API}/productos?${params}`, token ? {headers:{Authorization:`Bearer ${token}`}} : {}).then(r => r.json()).catch(() => []),
+      fetch(`${API}/stats`, token ? {headers:{Authorization:`Bearer ${token}`}} : {}).then(r => r.json()).catch(() => ({})),
     ]);
     setProductos(Array.isArray(prods) ? prods : []);
     setStats(st);
@@ -562,7 +650,8 @@ function App() {
 
   async function toggleFav(e, id) {
     e.stopPropagation();
-    await fetch(`${API}/productos/${id}/favorito`, { method:"POST" });
+    if (!token) { setShowAuth(true); return; }
+    await fetch(`${API}/productos/${id}/favorito`, { method:"POST", headers: token ? {Authorization:`Bearer ${token}`} : {} });
     cargar();
   }
 
@@ -609,6 +698,7 @@ function App() {
 
   return (
     <div>
+      {showAuth && <AuthModal onClose={() => setShowAuth(false)} onLogin={handleLogin} />}
       {modalProducto &&
         <Modal producto={modalProducto} onClose={() => setModalProducto(null)} />}
 
@@ -617,6 +707,23 @@ function App() {
           <h1>🛒 <span>Super</span>Precios AR</h1>
           <p>VEA · Carrefour · MásOnline · Dino</p>
         </div>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          {usuario ? (
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <span style={{fontSize:12,color:"#9ca3af"}}>{usuario.email}</span>
+              <button onClick={handleLogout}
+                style={{fontSize:11,padding:"4px 10px",borderRadius:8,border:"1px solid #374151",
+                  background:"none",color:"#9ca3af",cursor:"pointer"}}>
+                Salir
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => setShowAuth(true)}
+              style={{fontSize:12,padding:"6px 14px",borderRadius:8,border:"none",
+                background:"#FFD600",color:"#000",fontWeight:700,cursor:"pointer"}}>
+              Iniciar sesión
+            </button>
+          )}
         <div className="stats">
           <div className="stat">
             <div className="stat-val" style={{color:"#FFD600"}}>{stats.total_productos||0}</div>
@@ -627,13 +734,17 @@ function App() {
             <div className="stat-lbl">Favoritos</div>
           </div>
         </div>
+        </div>
       </div>
 
       <div className="container">
         <div className="tabs">
           {[["todos","Todos los productos"],["favoritos","Mis favoritos"]].map(([key,label]) => (
             <button key={key} className={`tab ${tab===key?"active":""}`}
-              onClick={() => setTab(key)}>{label}
+              onClick={() => {
+                if (key === "favoritos" && !token) { setShowAuth(true); return; }
+                setTab(key);
+              }}>{label}
               {key==="favoritos" && stats.favoritos > 0 &&
                 <span style={{marginLeft:6,background:"#E91E63",color:"#fff",
                   borderRadius:10,fontSize:10,padding:"1px 6px"}}>
