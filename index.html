@@ -601,6 +601,8 @@ function App() {
   const [modalProducto, setModalProducto] = React.useState(null);
   const [porPagina, setPorPagina]         = React.useState(25);
   const [pagina, setPagina]               = React.useState(1);
+  const [totalProductos, setTotalProductos] = React.useState(0);
+  const [totalPaginas, setTotalPaginas]     = React.useState(1);
   const [usuario, setUsuario]             = React.useState(() => {
     try { return JSON.parse(localStorage.getItem("sp_user")); } catch { return null; }
   });
@@ -622,8 +624,9 @@ function App() {
     // El useEffect con [token] dispara cargar() automáticamente
   }
 
-  async function cargar() {
+  async function cargar(paginaOverride) {
     setLoading(true);
+    const paginaActual = paginaOverride !== undefined ? paginaOverride : pagina;
     const params = new URLSearchParams();
     if (superFiltro !== "Todos") params.append("supermercado", superFiltro);
     if (catFiltro !== "Todas")   params.append("categoria", catFiltro);
@@ -631,22 +634,32 @@ function App() {
     if (soloOfertas)             params.append("ofertas", "true");
     if (tab === "favoritos")     params.append("favoritos", "true");
     if (busqueda)                params.append("busqueda", busqueda);
+    params.append("pagina", paginaActual);
+    params.append("por_pagina", porPagina === 0 ? 999999 : porPagina);
+    params.append("orden", orden);
 
-    const [prods, st] = await Promise.all([
-      fetch(`${API}/productos?${params}`, token ? {headers:{Authorization:`Bearer ${token}`}} : {}).then(r => r.json()).catch(() => []),
+    const [resp, st] = await Promise.all([
+      fetch(`${API}/productos?${params}`, token ? {headers:{Authorization:`Bearer ${token}`}} : {}).then(r => r.json()).catch(() => ({})),
       fetch(`${API}/stats`, token ? {headers:{Authorization:`Bearer ${token}`}} : {}).then(r => r.json()).catch(() => ({})),
     ]);
+    const prods = resp.productos || [];
     setProductos(Array.isArray(prods) ? prods : []);
+    setTotalProductos(resp.total || 0);
+    setTotalPaginas(resp.total_paginas || 1);
     setStats(st);
     setLoading(false);
-    setPagina(1);
   }
 
   // Un solo useEffect unificado — evita disparos en cascada
   React.useEffect(() => {
-    const t = setTimeout(cargar, busqueda ? 400 : 0);
+    setPagina(1);
+    const t = setTimeout(() => cargar(1), busqueda ? 400 : 0);
     return () => clearTimeout(t);
-  }, [tab, superFiltro, catFiltro, subcatFiltro, soloOfertas, busqueda, token]);
+  }, [tab, superFiltro, catFiltro, subcatFiltro, soloOfertas, busqueda, token, orden, porPagina]);
+
+  React.useEffect(() => {
+    cargar(pagina);
+  }, [pagina]);
 
   async function toggleFav(e, id) {
     e.stopPropagation();
@@ -655,26 +668,9 @@ function App() {
     cargar();
   }
 
-  const productosOrdenados = [...productos].sort((a,b) => {
-    if (orden === "popular") {
-      const pa = a.posicion != null ? a.posicion : 999999;
-      const pb = b.posicion != null ? b.posicion : 999999;
-      return pa - pb;
-    }
-    if (orden === "precio-asc")  return (a.precio||0) - (b.precio||0);
-    if (orden === "precio-desc") return (b.precio||0) - (a.precio||0);
-    if (orden === "descuento")   return (b.descuento_pct||0) - (a.descuento_pct||0);
-    if (orden === "reciente") {
-      const da = a.scrapeado_en ? new Date(a.scrapeado_en) : 0;
-      const db = b.scrapeado_en ? new Date(b.scrapeado_en) : 0;
-      return db - da;
-    }
-    return 0;
-  });
-  const totalPaginas    = porPagina === 0 ? 1 : Math.ceil(productosOrdenados.length / porPagina);
-  const paginaReal      = Math.min(pagina, Math.max(1, totalPaginas));
-  const inicio          = porPagina === 0 ? 0 : (paginaReal - 1) * porPagina;
-  const productosPagina = productosOrdenados.slice(inicio, porPagina === 0 ? undefined : inicio + porPagina);
+  const productosOrdenados = productos;
+  const paginaReal = pagina;
+  const productosPagina = productosOrdenados;
 
   function cambiarPagina(p) {
     setPagina(p);
@@ -819,7 +815,7 @@ function App() {
 
         <div className="result-count" style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
           <span>
-            {loading ? "Cargando..." : `${productos.length} producto${productos.length!==1?"s":""} · página ${paginaReal} de ${totalPaginas}`}
+            {loading ? "Cargando..." : `${totalProductos} producto${totalProductos!==1?"s":""} · página ${paginaReal} de ${totalPaginas}`}
           </span>
           <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
             <span style={{fontSize:11,color:"#9ca3af"}}>Por página:</span>
