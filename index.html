@@ -538,22 +538,6 @@ function AuthModal({ onClose, onLogin }) {
 
   async function handleSubmit() {
     setError(""); setMsg(""); setLoading(true);
-    if (modo === "reset") {
-      try {
-        const res = await fetch(`${API}/auth/reset-password`, {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({email})
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || "Error");
-        setMsg("Te enviamos un email para restablecer tu contraseña.");
-      } catch(e) {
-        setError(e.message);
-      }
-      setLoading(false);
-      return;
-    }
     const endpoint = modo === "login" ? "/auth/login" : "/auth/register";
     try {
       const res = await fetch(`${API}${endpoint}`, {
@@ -576,59 +560,27 @@ function AuthModal({ onClose, onLogin }) {
     setLoading(false);
   }
 
-  function cambiarModo(nuevoModo) {
-    setModo(nuevoModo);
-    setError("");
-    setMsg("");
-  }
-
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" style={{maxWidth:400}} onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <div className="modal-title">
-            {modo === "login" ? "Iniciar sesión" : modo === "register" ? "Crear cuenta" : "Recuperar contraseña"}
-          </div>
+          <div className="modal-title">{modo === "login" ? "Iniciar sesión" : "Crear cuenta"}</div>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
         {msg && <div style={{background:"#E8F5E9",color:"#2E7D32",padding:"10px 14px",borderRadius:10,marginBottom:12,fontSize:13}}>{msg}</div>}
         {error && <div style={{background:"#FCE4EC",color:"#C62828",padding:"10px 14px",borderRadius:10,marginBottom:12,fontSize:13}}>{error}</div>}
-        {modo === "reset" && (
-          <p style={{fontSize:13,color:"#6b7280",marginBottom:12}}>
-            Ingresá tu email y te enviaremos un link para restablecer tu contraseña.
-          </p>
-        )}
         <input className="auth-input" type="email" placeholder="Email"
           value={email} onChange={e => setEmail(e.target.value)} />
-        {modo !== "reset" && (
-          <input className="auth-input" type="password" placeholder="Contraseña"
-            value={password} onChange={e => setPassword(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && handleSubmit()} />
-        )}
+        <input className="auth-input" type="password" placeholder="Contraseña"
+          value={password} onChange={e => setPassword(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && handleSubmit()} />
         <button className="auth-btn" onClick={handleSubmit} disabled={loading}>
-          {loading ? "Cargando..." : modo === "login" ? "Iniciar sesión" : modo === "register" ? "Crear cuenta" : "Enviar email"}
+          {loading ? "Cargando..." : modo === "login" ? "Iniciar sesión" : "Crear cuenta"}
         </button>
-        <div style={{textAlign:"center",marginTop:12,display:"flex",flexDirection:"column",gap:8}}>
-          {modo === "login" && (
-            <>
-              <button className="auth-link" onClick={() => cambiarModo("register")}>
-                ¿No tenés cuenta? Registrate
-              </button>
-              <button className="auth-link" style={{color:"#9ca3af",fontSize:12}} onClick={() => cambiarModo("reset")}>
-                ¿Olvidaste tu contraseña?
-              </button>
-            </>
-          )}
-          {modo === "register" && (
-            <button className="auth-link" onClick={() => cambiarModo("login")}>
-              ¿Ya tenés cuenta? Iniciá sesión
-            </button>
-          )}
-          {modo === "reset" && (
-            <button className="auth-link" onClick={() => cambiarModo("login")}>
-              Volver al inicio de sesión
-            </button>
-          )}
+        <div style={{textAlign:"center",marginTop:12}}>
+          <button className="auth-link" onClick={() => {setModo(modo==="login"?"register":"login"); setError(""); setMsg("");}}>
+            {modo === "login" ? "¿No tenés cuenta? Registrate" : "¿Ya tenés cuenta? Iniciá sesión"}
+          </button>
         </div>
       </div>
     </div>
@@ -770,7 +722,7 @@ function App() {
             <div className="stat-val" style={{color:"#FFD600"}}>{stats.total_productos||0}</div>
             <div className="stat-lbl">Productos</div>
           </div>
-          <div className="stat" style={{cursor:"pointer"}} onClick={() => { setTab("favoritos"); window.scrollTo({top:0,behavior:"smooth"}); }}>
+          <div className="stat" style={{cursor:"pointer"}} onClick={() => { if (!token) { setShowAuth(true); return; } setTab("favoritos"); window.scrollTo({top:0,behavior:"smooth"}); }}>
             <div className="stat-val" style={{color:"#4CAF50"}}>{stats.favoritos||0}</div>
             <div className="stat-lbl">Favoritos</div>
           </div>
