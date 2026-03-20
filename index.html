@@ -612,14 +612,14 @@ function App() {
     setUsuario(user);
     localStorage.setItem("sp_token", access_token);
     localStorage.setItem("sp_user", JSON.stringify(user));
-    cargar();
+    // El useEffect con [token] dispara cargar() automáticamente
   }
   function handleLogout() {
     setToken(null);
     setUsuario(null);
     localStorage.removeItem("sp_token");
     localStorage.removeItem("sp_user");
-    cargar();
+    // El useEffect con [token] dispara cargar() automáticamente
   }
 
   async function cargar() {
@@ -642,11 +642,11 @@ function App() {
     setPagina(1);
   }
 
-  React.useEffect(() => { cargar(); }, [tab, superFiltro, catFiltro, subcatFiltro, soloOfertas]);
+  // Un solo useEffect unificado — evita disparos en cascada
   React.useEffect(() => {
-    const t = setTimeout(cargar, 400);
+    const t = setTimeout(cargar, busqueda ? 400 : 0);
     return () => clearTimeout(t);
-  }, [busqueda]);
+  }, [tab, superFiltro, catFiltro, subcatFiltro, soloOfertas, busqueda, token]);
 
   async function toggleFav(e, id) {
     e.stopPropagation();
