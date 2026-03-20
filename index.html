@@ -650,16 +650,12 @@ function App() {
     setLoading(false);
   }
 
-  // Un solo useEffect unificado — evita disparos en cascada
+  // useEffect para filtros — resetea a página 1
   React.useEffect(() => {
     setPagina(1);
     const t = setTimeout(() => cargar(1), busqueda ? 400 : 0);
     return () => clearTimeout(t);
   }, [tab, superFiltro, catFiltro, subcatFiltro, soloOfertas, busqueda, token, orden, porPagina]);
-
-  React.useEffect(() => {
-    cargar(pagina);
-  }, [pagina]);
 
   async function toggleFav(e, id) {
     e.stopPropagation();
@@ -674,6 +670,7 @@ function App() {
 
   function cambiarPagina(p) {
     setPagina(p);
+    cargar(p);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
   function cambiarPorPagina(val) {
