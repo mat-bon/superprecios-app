@@ -660,8 +660,17 @@ function App() {
   async function toggleFav(e, id) {
     e.stopPropagation();
     if (!token) { setShowAuth(true); return; }
-    await fetch(`${API}/productos/${id}/favorito`, { method:"POST", headers: token ? {Authorization:`Bearer ${token}`} : {} });
-    cargar();
+    // Actualizar estado local inmediatamente para feedback visual instantáneo
+    setProductos(prev => prev.map(p => p.id === id ? {...p, favorito: !p.favorito} : p));
+    const res = await fetch(`${API}/productos/${id}/favorito`, { method:"POST", headers: token ? {Authorization:`Bearer ${token}`} : {} });
+    const data = await res.json().catch(() => ({}));
+    // Si el servidor devuelve un estado distinto, sincronizar
+    if (data.favorito !== undefined) {
+      setProductos(prev => prev.map(p => p.id === id ? {...p, favorito: data.favorito} : p));
+    }
+    // Refrescar stats para actualizar contador de favoritos
+    fetch(`${API}/stats`, {headers:{Authorization:`Bearer ${token}`}})
+      .then(r => r.json()).then(st => setStats(st)).catch(() => {});
   }
 
   const productosOrdenados = productos;
