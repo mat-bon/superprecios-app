@@ -3,130 +3,861 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SuperPrecios AR</title>
+  <title>SuperPrecios AR - Comparador Inteligente</title>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
+    :root {
+      --primary: #FFD600;
+      --primary-dark: #FFC400;
+      --bg: #F4F5F8;
+      --card: #ffffff;
+      --text: #1a1a1a;
+      --text-secondary: #6b7280;
+      --border: #e5e7eb;
+      --shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+      --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.1);
+      --radius: 16px;
+      --radius-sm: 12px;
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f172a;
+        --card: #1e293b;
+        --text: #f1f5f9;
+        --text-secondary: #94a3b8;
+        --border: #334155;
+        --shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
+        --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.5);
+      }
+    }
+
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { background:#F4F5F8; font-family:'Segoe UI',system-ui,sans-serif; }
+    
+    body { 
+      background: var(--bg); 
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      color: var(--text);
+      line-height: 1.5;
+      transition: var(--transition);
+    }
 
-    .header { background:#111827; color:#fff; padding:16px 24px;
-      display:flex; align-items:center; justify-content:space-between;
-      flex-wrap:wrap; gap:12px; position:sticky; top:0; z-index:50;
-      box-shadow:0 4px 24px rgba(0,0,0,.4); }
-    .header h1 { font-size:20px; font-weight:900; letter-spacing:-.5px; }
-    .header h1 span { color:#FFD600; }
-    .header p { font-size:11px; color:#888; margin-top:2px; }
+    /* Header mejorado con glassmorphism */
+    .header { 
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(10px);
+      color: #fff; 
+      padding: 16px 24px;
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between;
+      flex-wrap: wrap; 
+      gap: 12px; 
+      position: sticky; 
+      top: 0; 
+      z-index: 50;
+      box-shadow: 0 4px 30px rgba(0,0,0,.3);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .header h1 { 
+      font-size: 22px; 
+      font-weight: 800; 
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #fff 0%, var(--primary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .header p { 
+      font-size: 11px; 
+      color: #9ca3af; 
+      margin-top: 2px; 
+      font-weight: 500;
+    }
 
-    .stats { display:flex; gap:10px; flex-wrap:wrap; }
-    .stat { background:#2a2a2a; padding:10px 16px; border-radius:12px; text-align:center; }
-    .stat-val { font-size:20px; font-weight:900; }
-    .stat-lbl { color:#888; font-size:11px; }
+    .stats { 
+      display: flex; 
+      gap: 10px; 
+      flex-wrap: wrap; 
+    }
+    
+    .stat { 
+      background: rgba(255,255,255,0.1); 
+      padding: 10px 16px; 
+      border-radius: var(--radius-sm); 
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.1);
+      transition: var(--transition);
+      cursor: pointer;
+    }
+    
+    .stat:hover {
+      background: rgba(255,255,255,0.15);
+      transform: translateY(-2px);
+    }
+    
+    .stat-val { 
+      font-size: 20px; 
+      font-weight: 900; 
+      transition: var(--transition);
+    }
+    
+    .stat-lbl { 
+      color: #9ca3af; 
+      font-size: 11px;
+      font-weight: 500;
+    }
 
-    .container { max-width:1200px; margin:0 auto; padding:20px 16px; }
+    .container { 
+      max-width: 1200px; 
+      margin: 0 auto; 
+      padding: 20px 16px; 
+    }
 
-    .filters { background:#fff; border-radius:14px; padding:14px 18px;
-      margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,.05); }
-    .filter-row { display:flex; flex-wrap:nowrap; gap:8px; align-items:center; margin-bottom:8px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
-    .filter-row::-webkit-scrollbar { display:none; }
-    .filter-row:last-child { margin-bottom:0; }
-    .filter-label { font-size:11px; color:#9ca3af; width:90px; flex-shrink:0; }
+    /* Tabs mejorados */
+    .tabs { 
+      display: flex; 
+      border-bottom: 2px solid var(--border);
+      background: var(--card); 
+      border-radius: var(--radius) var(--radius) 0 0; 
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      margin-bottom: 20px;
+      position: relative;
+    }
+    
+    .tab { 
+      padding: 14px 24px; 
+      font-size: 13.5px; 
+      font-weight: 700;
+      border: none; 
+      background: none; 
+      cursor: pointer; 
+      color: var(--text-secondary);
+      border-bottom: 3px solid transparent; 
+      margin-bottom: -2px;
+      transition: var(--transition); 
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .tab:hover {
+      color: var(--text);
+      background: rgba(255,214,0,0.05);
+    }
+    
+    .tab.active { 
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+    
+    .tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 30px;
+      height: 3px;
+      background: var(--primary);
+      border-radius: 3px 3px 0 0;
+    }
 
-    .pill { padding:6px 14px; border-radius:24px; font-size:12.5px; font-weight:700;
-      border:1.5px solid #e0e0e0; background:#fff; color:#555;
-      cursor:pointer; transition:all .15s; white-space:nowrap; }
-    .pill.active { border:none; color:#fff; }
+    /* Búsqueda mejorada */
+    .search { 
+      position: relative; 
+      margin-bottom: 16px;
+    }
+    
+    .search span { 
+      position: absolute; 
+      left: 16px; 
+      top: 50%; 
+      transform: translateY(-50%);
+      font-size: 18px;
+      opacity: 0.6;
+    }
+    
+    .search input { 
+      width: 100%; 
+      padding: 14px 16px 14px 48px; 
+      font-size: 15px;
+      border: 2px solid var(--border); 
+      border-radius: var(--radius); 
+      background: var(--card);
+      outline: none; 
+      font-family: inherit;
+      transition: var(--transition);
+      color: var(--text);
+    }
+    
+    .search input:focus { 
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(255,214,0,0.1);
+    }
 
-    .search { position:relative; margin-bottom:14px; }
-    .search span { position:absolute; left:14px; top:50%; transform:translateY(-50%); }
-    .search input { width:100%; padding:12px 14px 12px 40px; font-size:14px;
-      border:1.5px solid #e5e7eb; border-radius:12px; background:#fff;
-      outline:none; font-family:inherit; }
-    .search input:focus { border-color:#FFD600; }
+    /* Filtros compactos y modernos */
+    .filters { 
+      background: var(--card); 
+      border-radius: var(--radius); 
+      padding: 16px;
+      margin-bottom: 20px; 
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+    
+    .filter-row { 
+      display: flex; 
+      flex-wrap: nowrap; 
+      gap: 8px; 
+      align-items: center; 
+      margin-bottom: 10px;
+      overflow-x: auto; 
+      padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+    
+    .filter-row::-webkit-scrollbar { display: none; }
+    .filter-row:last-child { margin-bottom: 0; }
+    
+    .filter-label { 
+      font-size: 11px; 
+      color: var(--text-secondary); 
+      width: 90px; 
+      flex-shrink: 0;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
 
-    .result-count { font-size:13px; color:#9ca3af; margin-bottom:12px; }
+    .pill { 
+      padding: 8px 16px; 
+      border-radius: 24px; 
+      font-size: 12px; 
+      font-weight: 600;
+      border: 1.5px solid var(--border); 
+      background: var(--card); 
+      color: var(--text-secondary);
+      cursor: pointer; 
+      transition: var(--transition);
+      white-space: nowrap;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .pill:hover {
+      border-color: var(--primary);
+      color: var(--text);
+      transform: translateY(-1px);
+    }
+    
+    .pill.active { 
+      border: none; 
+      color: #000;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(255,214,0,0.3);
+    }
 
-    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; }
+    /* Toggle de ofertas mejorado */
+    .offer-toggle {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      background: var(--bg);
+      border: 2px solid var(--border);
+      border-radius: 24px;
+      padding: 8px 16px;
+      transition: var(--transition);
+    }
+    
+    .offer-toggle.active {
+      background: #FCE4EC;
+      border-color: #E91E63;
+    }
+    
+    .toggle-switch {
+      width: 44px;
+      height: 24px;
+      border-radius: 12px;
+      position: relative;
+      background: #ccc;
+      transition: var(--transition);
+    }
+    
+    .offer-toggle.active .toggle-switch {
+      background: #E91E63;
+    }
+    
+    .toggle-knob {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      transition: var(--transition);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .offer-toggle.active .toggle-knob {
+      left: 22px;
+    }
 
-    .card { background:#fff; border-radius:16px; padding:16px 18px;
-      border:1.5px solid #ebebeb; box-shadow:0 2px 10px rgba(0,0,0,.05);
-      display:flex; flex-direction:column; gap:10px; position:relative;
-      transition:all .18s; cursor:pointer; }
-    .card:hover { transform:translateY(-3px); box-shadow:0 8px 28px rgba(0,0,0,.12); }
-    .card.oferta { border-color:#FFD600; box-shadow:0 4px 16px rgba(255,214,0,.15); }
+    /* Contador de resultados */
+    .result-count { 
+      font-size: 13px; 
+      color: var(--text-secondary); 
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-weight: 500;
+    }
 
-    .fav-btn { position:absolute; top:12px; right:12px; background:none;
-      border:none; cursor:pointer; font-size:18px; padding:2px;
-      transition:all .15s; z-index:2; }
+    /* Grid y Tarjetas mejoradas */
+    .grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+      gap: 16px; 
+    }
 
-    .badges { display:flex; gap:5px; flex-wrap:wrap; padding-right:30px; }
-    .super-badge { font-size:10px; font-weight:800; padding:2px 8px;
-      border-radius:20px; letter-spacing:.5px; }
-    .cat-badge { font-size:10px; color:#999; padding:2px 7px;
-      background:#f5f5f5; border-radius:20px; }
-    .time-badge { font-size:10px; color:#bbb; padding:2px 7px;
-      background:#f9f9f9; border-radius:20px; margin-left:auto; }
+    .card { 
+      background: var(--card); 
+      border-radius: var(--radius); 
+      padding: 0;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      display: flex; 
+      flex-direction: column; 
+      gap: 0;
+      position: relative;
+      transition: var(--transition);
+      cursor: pointer;
+      overflow: hidden;
+    }
+    
+    .card:hover { 
+      transform: translateY(-4px); 
+      box-shadow: var(--shadow-lg);
+      border-color: var(--primary);
+    }
+    
+    .card.oferta { 
+      border-color: var(--primary);
+      box-shadow: 0 4px 20px rgba(255,214,0,0.15);
+    }
 
-    .product-name { font-size:13.5px; font-weight:600; color:#1a1a1a;
-      line-height:1.4; padding-right:4px; }
+    /* Imagen de producto */
+    .card-image {
+      width: 100%;
+      height: 180px;
+      object-fit: contain;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      padding: 16px;
+      position: relative;
+    }
+    
+    @media (prefers-color-scheme: dark) {
+      .card-image {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      }
+    }
 
-    .prices { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
-    .price { font-size:24px; font-weight:900; letter-spacing:-1px; }
-    .price.normal { color:#1a1a1a; }
-    .price.oferta { color:#E91E63; }
-    .price-original { font-size:13px; color:#ccc; text-decoration:line-through; }
-    .discount { font-size:12px; font-weight:800; color:#E91E63;
-      background:#FCE4EC; padding:2px 7px; border-radius:10px; }
+    /* Badge de supermercado flotante */
+    .super-float {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 2;
+    }
 
-    .promo { display:inline-flex; align-items:center; gap:3px;
-      color:#fff; font-size:10px; font-weight:800; padding:3px 8px;
-      border-radius:20px; letter-spacing:.4px; text-transform:uppercase; }
+    /* Botón favorito mejorado */
+    .fav-btn { 
+      position: absolute; 
+      top: 12px; 
+      right: 12px; 
+      background: rgba(255,255,255,0.95);
+      border: none;
+      cursor: pointer; 
+      font-size: 20px; 
+      padding: 8px;
+      border-radius: 50%;
+      transition: var(--transition);
+      z-index: 2;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .fav-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
 
-    .empty { text-align:center; padding:60px 20px; color:#d1d5db;
-      background:#fff; border-radius:16px; }
-    .empty div { font-size:56px; }
+    /* Contenido de tarjeta */
+    .card-content {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
 
-    .tabs { display:flex; border-bottom:2px solid #e5e7eb;
-      background:#fff; border-radius:12px 12px 0 0; overflow:hidden;
-      box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:20px; }
-    .tab { padding:12px 24px; font-size:13.5px; font-weight:700;
-      border:none; background:none; cursor:pointer; color:#9ca3af;
-      border-bottom:3px solid transparent; margin-bottom:-2px;
-      transition:all .15s; flex:1; }
-    .tab.active { color:#111827; border-bottom-color:#FFD600; }
+    .badges { 
+      display: flex; 
+      gap: 6px; 
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    
+    .super-badge { 
+      font-size: 10px; 
+      font-weight: 800; 
+      padding: 4px 10px;
+      border-radius: 20px; 
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    
+    .cat-badge { 
+      font-size: 10px; 
+      color: var(--text-secondary); 
+      padding: 4px 10px;
+      background: var(--bg); 
+      border-radius: 20px;
+      font-weight: 600;
+    }
 
-    .footer { margin-top:36px; padding:18px 22px; background:#111827;
-      border-radius:16px; color:#6b7280; font-size:12px; line-height:1.8; }
-    .footer strong { color:#FFD600; }
+    .product-name { 
+      font-size: 14px; 
+      font-weight: 600; 
+      color: var(--text);
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
 
-    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6);
-      z-index:100; display:flex; align-items:center; justify-content:center;
-      padding:16px; }
-    .modal { background:#fff; border-radius:20px; width:100%; max-width:520px;
-      max-height:90vh; overflow-y:auto; padding:24px;
-      box-shadow:0 20px 60px rgba(0,0,0,.3); }
-    .modal-header { display:flex; justify-content:space-between; align-items:flex-start;
-      gap:12px; margin-bottom:16px; }
-    .modal-title { font-size:15px; font-weight:700; color:#1a1a1a; line-height:1.4; }
-    .modal-close { background:none; border:none; font-size:22px; cursor:pointer;
-      color:#9ca3af; flex-shrink:0; }
-    .modal-close:hover { color:#1a1a1a; }
-    .modal-section { font-size:11px; font-weight:700; color:#9ca3af;
-      text-transform:uppercase; letter-spacing:.5px; margin:20px 0 10px; }
-    .modal-link { display:inline-flex; align-items:center; gap:6px;
-      margin-top:16px; padding:10px 18px; background:#111827; color:#fff;
-      border-radius:10px; font-size:13px; font-weight:700; text-decoration:none; }
-    .modal-link:hover { background:#374151; }
-    .history-empty { text-align:center; padding:24px; color:#d1d5db; font-size:13px; }
-    .auth-input { width:100%; padding:11px 14px; font-size:14px; border:1.5px solid #e5e7eb;
-      border-radius:10px; outline:none; font-family:inherit; margin-bottom:10px; }
-    .auth-input:focus { border-color:#FFD600; }
-    .auth-btn { width:100%; padding:12px; background:#111827; color:#fff; border:none;
-      border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; }
-    .auth-btn:hover { background:#374151; }
-    .auth-link { background:none; border:none; color:#6b7280; font-size:13px;
-      cursor:pointer; text-decoration:underline; font-family:inherit; margin-top:8px; }
+    /* Precios destacados */
+    .prices { 
+      display: flex; 
+      align-items: baseline; 
+      gap: 10px; 
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+    
+    .price { 
+      font-size: 28px; 
+      font-weight: 900; 
+      letter-spacing: -1px;
+      font-family: 'Inter', sans-serif;
+    }
+    
+    .price.normal { color: var(--text); }
+    .price.oferta { 
+      color: #E91E63;
+      text-shadow: 0 2px 4px rgba(233,30,99,0.1);
+    }
+    
+    .price-original { 
+      font-size: 14px; 
+      color: var(--text-secondary); 
+      text-decoration: line-through;
+      font-weight: 500;
+    }
+    
+    .discount { 
+      font-size: 12px; 
+      font-weight: 800; 
+      color: #fff;
+      background: linear-gradient(135deg, #E91E63 0%, #C2185B 100%);
+      padding: 4px 10px; 
+      border-radius: 20px;
+      box-shadow: 0 2px 8px rgba(233,30,99,0.3);
+    }
+
+    /* Promoción badge */
+    .promo { 
+      display: inline-flex; 
+      align-items: center; 
+      gap: 4px;
+      color: #fff; 
+      font-size: 11px; 
+      font-weight: 800; 
+      padding: 6px 12px;
+      border-radius: 20px; 
+      letter-spacing: 0.5px; 
+      text-transform: uppercase;
+      align-self: flex-start;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    /* Comparador de precios en tarjeta */
+    .price-compare {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px dashed var(--border);
+    }
+    
+    .compare-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 8px;
+      margin-bottom: 4px;
+      font-size: 12px;
+      transition: var(--transition);
+    }
+    
+    .compare-row:hover {
+      background: var(--bg);
+    }
+    
+    .compare-row.best {
+      background: #E8F5E9;
+      border: 1px solid #A5D6A7;
+      font-weight: 700;
+    }
+    
+    .compare-super {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .best-badge {
+      font-size: 10px;
+      background: #4CAF50;
+      color: white;
+      padding: 2px 6px;
+      border-radius: 10px;
+    }
+
+    /* Sparkline mini gráfico */
+    .sparkline {
+      height: 30px;
+      margin-top: 8px;
+      opacity: 0.6;
+    }
+
+    /* Empty state mejorado */
+    .empty { 
+      text-align: center; 
+      padding: 80px 20px; 
+      color: var(--text-secondary);
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 2px dashed var(--border);
+    }
+    
+    .empty div { 
+      font-size: 64px; 
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+    
+    .empty p {
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    /* Skeleton loading */
+    .skeleton {
+      background: linear-gradient(90deg, var(--bg) 25%, var(--border) 50%, var(--bg) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 8px;
+    }
+    
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    
+    .skeleton-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    
+    .skeleton-image {
+      height: 180px;
+      width: 100%;
+    }
+    
+    .skeleton-content {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .skeleton-line {
+      height: 12px;
+    }
+    
+    .skeleton-line.short { width: 60%; }
+    .skeleton-line.medium { width: 80%; }
+    .skeleton-price {
+      height: 28px;
+      width: 100px;
+      margin-top: 8px;
+    }
+
+    /* Footer mejorado */
+    .footer { 
+      margin-top: 40px; 
+      padding: 24px; 
+      background: var(--card);
+      border-radius: var(--radius); 
+      color: var(--text-secondary); 
+      font-size: 13px; 
+      line-height: 1.6;
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+    
+    .footer strong { 
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    /* Modal mejorado */
+    .modal-overlay { 
+      position: fixed; 
+      inset: 0; 
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      z-index: 100; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      padding: 16px;
+      animation: fadeIn 0.2s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    .modal { 
+      background: var(--card); 
+      border-radius: var(--radius); 
+      width: 100%; 
+      max-width: 560px;
+      max-height: 90vh; 
+      overflow-y: auto; 
+      padding: 0;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+      animation: slideUp 0.3s ease;
+    }
+    
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    
+    .modal-header { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: flex-start;
+      gap: 12px; 
+      margin-bottom: 0;
+      padding: 24px 24px 16px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--card);
+      z-index: 10;
+    }
+    
+    .modal-title { 
+      font-size: 16px; 
+      font-weight: 700; 
+      color: var(--text);
+      line-height: 1.4;
+    }
+    
+    .modal-close { 
+      background: var(--bg);
+      border: none; 
+      font-size: 20px; 
+      cursor: pointer;
+      color: var(--text-secondary);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+    
+    .modal-close:hover { 
+      background: #FCE4EC;
+      color: #E91E63;
+    }
+    
+    .modal-content {
+      padding: 24px;
+    }
+    
+    .modal-section { 
+      font-size: 12px; 
+      font-weight: 700; 
+      color: var(--text-secondary);
+      text-transform: uppercase; 
+      letter-spacing: 0.5px; 
+      margin: 24px 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Toast notification */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--card);
+      color: var(--text);
+      padding: 16px 24px;
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border);
+      z-index: 200;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+    
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    
+    .toast.success {
+      border-color: #4CAF50;
+      background: #E8F5E9;
+    }
+    
+    .toast.error {
+      border-color: #E91E63;
+      background: #FCE4EC;
+    }
+
+    /* Paginación mejorada */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      margin-top: 32px;
+      flex-wrap: wrap;
+    }
+    
+    .page-btn {
+      padding: 10px 16px;
+      border-radius: 12px;
+      border: 1.5px solid var(--border);
+      background: var(--card);
+      color: var(--text-secondary);
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      min-width: 40px;
+      text-align: center;
+    }
+    
+    .page-btn:hover:not(:disabled) {
+      border-color: var(--primary);
+      color: var(--text);
+    }
+    
+    .page-btn.active {
+      background: var(--primary);
+      color: #000;
+      border-color: var(--primary);
+      font-weight: 700;
+    }
+    
+    .page-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .header {
+        padding: 12px 16px;
+      }
+      
+      .header h1 {
+        font-size: 18px;
+      }
+      
+      .grid {
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 12px;
+      }
+      
+      .card-image {
+        height: 150px;
+      }
+      
+      .price {
+        font-size: 24px;
+      }
+      
+      .filter-row {
+        gap: 6px;
+      }
+      
+      .pill {
+        padding: 6px 12px;
+        font-size: 11px;
+      }
+    }
+
+    /* Scrollbar personalizada */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: var(--bg);
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: var(--text-secondary);
+      border-radius: 4px;
+      opacity: 0.5;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text);
+    }
   </style>
 </head>
 <body>
@@ -256,7 +987,6 @@ const CATEGORIAS = {
   },
 };
 
-// Helper para labels
 const CAT_LABELS = Object.fromEntries(
   Object.entries(CATEGORIAS).map(([k,v]) => [k, v.label])
 );
@@ -290,6 +1020,65 @@ function promoColor(promo) {
   return "#C62828";
 }
 
+// Sparkline component para mini gráfico en tarjeta
+function Sparkline({ data }) {
+  if (!data || data.length < 2) return null;
+  const width = 100;
+  const height = 30;
+  const prices = data.map(d => d.precio);
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  const range = max - min || 1;
+  
+  const points = data.map((d, i) => {
+    const x = (i / (data.length - 1)) * width;
+    const y = height - ((d.precio - min) / range) * height;
+    return `${x},${y}`;
+  }).join(" ");
+  
+  return (
+    <svg className="sparkline" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
+      <polyline
+        points={points}
+        fill="none"
+        stroke="#E91E63"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+// Toast component
+function Toast({ message, type, onClose }) {
+  React.useEffect(() => {
+    const timer = setTimeout(onClose, 3000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+  
+  return (
+    <div className={`toast ${type} show`}>
+      <span>{type === 'success' ? '✅' : '❌'}</span>
+      {message}
+    </div>
+  );
+}
+
+// Skeleton Card component
+function SkeletonCard() {
+  return (
+    <div className="skeleton-card">
+      <div className="skeleton skeleton-image"></div>
+      <div className="skeleton-content">
+        <div className="skeleton skeleton-line short"></div>
+        <div className="skeleton skeleton-line medium"></div>
+        <div className="skeleton skeleton-price"></div>
+      </div>
+    </div>
+  );
+}
+
 function MiniChart({ data }) {
   if (!data || data.length < 2) return null;
   const W = 460, H = 140, PAD = { top:10, right:10, bottom:24, left:60 };
@@ -311,32 +1100,28 @@ function MiniChart({ data }) {
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:H}}>
-      {/* Grid lines */}
       {[0,.5,1].map(t => {
         const y = PAD.top + innerH * (1 - t);
         const val = minP + rng * t;
         return (
           <g key={t}>
             <line x1={PAD.left} y1={y} x2={W-PAD.right} y2={y}
-              stroke="#f0f0f0" strokeWidth="1" />
+              stroke="var(--border)" strokeWidth="1" />
             <text x={PAD.left - 6} y={y+4} textAnchor="end"
-              fontSize="10" fill="#9ca3af">
+              fontSize="10" fill="var(--text-secondary)">
               ${Math.round(val).toLocaleString("es-AR")}
             </text>
           </g>
         );
       })}
-      {/* Area */}
       <polygon points={areaPoints} fill="#E91E63" fillOpacity="0.08" />
-      {/* Line */}
       <polyline points={points} fill="none" stroke="#E91E63" strokeWidth="2.5"
         strokeLinejoin="round" strokeLinecap="round" />
-      {/* Dots + labels */}
       {data.map((d,i) => (
         <g key={i}>
           <circle cx={toX(i)} cy={toY(d.precio)} r="4" fill="#E91E63" />
           <text x={toX(i)} y={H - 6} textAnchor="middle"
-            fontSize="10" fill="#9ca3af">
+            fontSize="10" fill="var(--text-secondary)">
             {fmtFecha(d.scrapeado_en)}
           </text>
         </g>
@@ -374,160 +1159,155 @@ function Modal({ producto, onClose }) {
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
 
-        <div style={{display:"flex",gap:8,marginBottom:14}}>
-          <span className="super-badge" style={{background:sc.bg,color:sc.text}}>
-            {producto.supermercado}
-          </span>
-          <span className="cat-badge">{SUBCAT_LABELS[producto.subcategoria] || CAT_LABELS[producto.categoria] || producto.categoria}</span>
-        </div>
-
-        {producto.imagen_url &&
-          <img src={producto.imagen_url} alt={producto.nombre}
-            style={{width:"100%",height:"150px",objectFit:"contain",
-              background:"#f9f9f9",borderRadius:10,marginBottom:14}} />}
-
-        <div style={{fontSize:32,fontWeight:900,color:hasOffer?"#E91E63":"#1a1a1a"}}>
-          {fmt(producto.precio)}
-        </div>
-        {producto.precio_original &&
-          <div style={{display:"flex",gap:8,alignItems:"center",marginTop:4}}>
-            <span style={{color:"#ccc",textDecoration:"line-through",fontSize:13}}>
-              {fmt(producto.precio_original)}
+        <div className="modal-content">
+          <div style={{display:"flex",gap:8,marginBottom:16}}>
+            <span className="super-badge" style={{background:sc.bg,color:sc.text}}>
+              {producto.supermercado}
             </span>
-            {producto.descuento_pct &&
-              <span className="discount">-{producto.descuento_pct}%</span>}
-          </div>}
-        {producto.promocion &&
-          <span className="promo"
-            style={{background:promoColor(producto.promocion),marginTop:6,display:"inline-flex"}}>
-            {producto.promocion}
-          </span>}
-
-        {producto.otros_supers && producto.otros_supers.length > 0 && (
-          <>
-            <div className="modal-section">🏪 En otros supermercados</div>
-            <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              {[...producto.otros_supers].sort((a,b) => a.precio - b.precio).map(o => {
-                const osc = SUPER_COLORS[o.supermercado] || {bg:"#888",text:"#fff"};
-                const esMasBarato = o.precio < producto.precio;
-                return (
-                  <a key={o.supermercado} href={o.url} target="_blank" rel="noopener noreferrer"
-                    style={{display:"flex",justifyContent:"space-between",alignItems:"center",
-                      textDecoration:"none",padding:"10px 14px",borderRadius:12,
-                      background:esMasBarato?"#E8F5E9":"#f9f9f9",
-                      border:esMasBarato?"1.5px solid #A5D6A7":"1.5px solid #ebebeb"}}>
-                    <span className="super-badge" style={{background:osc.bg,color:osc.text}}>
-                      {o.supermercado}
-                    </span>
-                    <span style={{fontWeight:900,fontSize:18,color:esMasBarato?"#2E7D32":"#1a1a1a"}}>
-                      {fmt(o.precio)}
-                      {esMasBarato && <span style={{fontSize:11,marginLeft:6,color:"#2E7D32"}}>💚 más barato</span>}
-                    </span>
-                  </a>
-                );
-              })}
-            </div>
-          </>
-        )}
-
-        <div className="modal-section">📈 Historial de precios</div>
-
-        {loadingH ? (
-          <div className="history-empty">Cargando...</div>
-        ) : historial.length < 2 ? (
-          <div className="history-empty">
-            No hay suficiente historial aún — volvé en unos días 📅
+            <span className="cat-badge">{SUBCAT_LABELS[producto.subcategoria] || CAT_LABELS[producto.categoria] || producto.categoria}</span>
           </div>
-        ) : (
-          <>
-            <MiniChart data={historial} />
-            <div style={{display:"flex",gap:20,marginTop:8,fontSize:12,color:"#6b7280"}}>
-              <span>📉 Mínimo: <strong style={{color:"#4CAF50"}}>{fmt(minP)}</strong></span>
-              <span>📈 Máximo: <strong style={{color:"#E91E63"}}>{fmt(maxP)}</strong></span>
-            </div>
-          </>
-        )}
 
-        <a href={producto.url} target="_blank" rel="noopener noreferrer"
-          className="modal-link">
-          Ver en {producto.supermercado} →
-        </a>
+          {producto.imagen_url &&
+            <img src={producto.imagen_url} alt={producto.nombre}
+              style={{width:"100%",height:200,objectFit:"contain",
+                background:"var(--bg)",borderRadius:12,marginBottom:16}} />}
+
+          <div style={{fontSize:36,fontWeight:900,color:hasOffer?"#E91E63":"var(--text)"}}>
+            {fmt(producto.precio)}
+          </div>
+          {producto.precio_original &&
+            <div style={{display:"flex",gap:8,alignItems:"center",marginTop:4}}>
+              <span style={{color:"var(--text-secondary)",textDecoration:"line-through",fontSize:14}}>
+                {fmt(producto.precio_original)}
+              </span>
+              {producto.descuento_pct &&
+                <span className="discount">-{producto.descuento_pct}%</span>}
+            </div>}
+          {producto.promocion &&
+            <span className="promo"
+              style={{background:promoColor(producto.promocion),marginTop:8,display:"inline-flex"}}>
+              {producto.promocion}
+            </span>}
+
+          {producto.otros_supers && producto.otros_supers.length > 0 && (
+            <>
+              <div className="modal-section">🏪 Comparación de precios</div>
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                {[...producto.otros_supers].sort((a,b) => a.precio - b.precio).map(o => {
+                  const osc = SUPER_COLORS[o.supermercado] || {bg:"#888",text:"#fff"};
+                  const esMasBarato = o.precio < producto.precio;
+                  return (
+                    <a key={o.supermercado} href={o.url} target="_blank" rel="noopener noreferrer"
+                      style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                        textDecoration:"none",padding:"12px 16px",borderRadius:12,
+                        background:esMasBarato?"#E8F5E9":"var(--bg)",
+                        border:esMasBarato?"1.5px solid #A5D6A7":"1.5px solid var(--border)"}}>
+                      <span className="super-badge" style={{background:osc.bg,color:osc.text}}>
+                        {o.supermercado}
+                      </span>
+                      <span style={{fontWeight:900,fontSize:20,color:esMasBarato?"#2E7D32":"var(--text)"}}>
+                        {fmt(o.precio)}
+                        {esMasBarato && <span style={{fontSize:12,marginLeft:8,color:"#2E7D32",fontWeight:600}}>💚 Mejor precio</span>}
+                      </span>
+                    </a>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          <div className="modal-section">📈 Historial de precios</div>
+
+          {loadingH ? (
+            <div className="history-empty">Cargando...</div>
+          ) : historial.length < 2 ? (
+            <div className="history-empty">
+              No hay suficiente historial aún — volvé en unos días 📅
+            </div>
+          ) : (
+            <>
+              <MiniChart data={historial} />
+              <div style={{display:"flex",gap:24,marginTop:12,fontSize:13,color:"var(--text-secondary)"}}>
+                <span>📉 Mínimo: <strong style={{color:"#4CAF50"}}>{fmt(minP)}</strong></span>
+                <span>📈 Máximo: <strong style={{color:"#E91E63"}}>{fmt(maxP)}</strong></span>
+                <span>📊 Variación: <strong style={{color:minP < maxP ? "#4CAF50" : "#E91E63"}}>
+                  {(((maxP - minP) / maxP) * 100).toFixed(1)}%
+                </strong></span>
+              </div>
+            </>
+          )}
+
+          <a href={producto.url} target="_blank" rel="noopener noreferrer"
+            style={{display:"inline-flex",alignItems:"center",gap:8,
+              marginTop:24,padding:"14px 24px",background:"var(--text)",color:"#fff",
+              borderRadius:12,fontSize:14,fontWeight:700,textDecoration:"none",
+              transition:"all 0.2s",boxShadow:"0 4px 12px rgba(0,0,0,0.2)"}}>
+            Ver en {producto.supermercado} →
+          </a>
+        </div>
       </div>
     </div>
   );
 }
 
-
 function Paginacion({ paginaActual, totalPaginas, onCambiar }) {
   if (totalPaginas <= 1) return null;
-  const [inputVal, setInputVal] = React.useState(String(paginaActual));
-
-  React.useEffect(() => {
-    setInputVal(String(paginaActual));
-  }, [paginaActual]);
-
-  function irAPagina() {
-    const n = parseInt(inputVal);
-    if (!isNaN(n) && n >= 1 && n <= totalPaginas) onCambiar(n);
-    else setInputVal(String(paginaActual));
-  }
-
-  const items = [];
-  const delta = 2;
-  let prev = null;
-  for (let i = 1; i <= totalPaginas; i++) {
-    if (i === 1 || i === totalPaginas || (i >= paginaActual - delta && i <= paginaActual + delta)) {
-      if (prev !== null && i - prev > 1) items.push("...");
-      items.push(i);
-      prev = i;
+  
+  const getVisiblePages = () => {
+    const pages = [];
+    const maxVisible = 5;
+    let start = Math.max(1, paginaActual - Math.floor(maxVisible / 2));
+    let end = Math.min(totalPaginas, start + maxVisible - 1);
+    
+    if (end - start < maxVisible - 1) {
+      start = Math.max(1, end - maxVisible + 1);
     }
-  }
+    
+    if (start > 1) pages.push(1);
+    if (start > 2) pages.push("...");
+    
+    for (let i = start; i <= end; i++) pages.push(i);
+    
+    if (end < totalPaginas - 1) pages.push("...");
+    if (end < totalPaginas) pages.push(totalPaginas);
+    
+    return pages;
+  };
 
   return (
-    <div style={{display:"flex",justifyContent:"center",alignItems:"center",
-      gap:6,marginTop:24,flexWrap:"wrap"}}>
-      <button className="pill" onClick={() => onCambiar(paginaActual - 1)}
+    <div className="pagination">
+      <button 
+        className="page-btn" 
+        onClick={() => onCambiar(paginaActual - 1)}
         disabled={paginaActual === 1}
-        style={{padding:"6px 14px",opacity:paginaActual===1?0.4:1}}>
+      >
         ← Anterior
       </button>
-      {items.map((item, i) =>
-        item === "..." ? (
-          <span key={"e"+i} style={{color:"#9ca3af",padding:"0 2px"}}>...</span>
+      
+      {getVisiblePages().map((page, i) => 
+        page === "..." ? (
+          <span key={i} style={{color:"var(--text-secondary)",padding:"0 4px"}}>...</span>
         ) : (
-          <button key={item}
-            className={"pill" + (item === paginaActual ? " active" : "")}
-            onClick={() => onCambiar(item)}
-            style={{padding:"6px 12px",
-              ...(item===paginaActual?{background:"#111827",color:"#fff",border:"none"}:{})}}>
-            {item}
+          <button
+            key={page}
+            className={`page-btn ${page === paginaActual ? 'active' : ''}`}
+            onClick={() => onCambiar(page)}
+          >
+            {page}
           </button>
         )
       )}
-      <div style={{display:"flex",alignItems:"center",gap:6,marginLeft:4}}>
-        <span style={{fontSize:12,color:"#9ca3af"}}>Ir a:</span>
-        <input
-          type="number"
-          min="1"
-          max={totalPaginas}
-          value={inputVal}
-          onChange={e => setInputVal(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && irAPagina()}
-          onBlur={irAPagina}
-          style={{width:52,padding:"5px 8px",borderRadius:10,border:"1.5px solid #e0e0e0",
-            fontSize:13,fontWeight:700,textAlign:"center",fontFamily:"inherit",outline:"none"}}
-        />
-        <span style={{fontSize:12,color:"#9ca3af"}}>de {totalPaginas}</span>
-      </div>
-      <button className="pill" onClick={() => onCambiar(paginaActual + 1)}
+      
+      <button 
+        className="page-btn" 
+        onClick={() => onCambiar(paginaActual + 1)}
         disabled={paginaActual === totalPaginas}
-        style={{padding:"6px 14px",opacity:paginaActual===totalPaginas?0.4:1}}>
+      >
         Siguiente →
       </button>
     </div>
   );
 }
-
 
 function AuthModal({ onClose, onLogin }) {
   const [modo, setModo]         = React.useState("login");
@@ -568,20 +1348,29 @@ function AuthModal({ onClose, onLogin }) {
           <div className="modal-title">{modo === "login" ? "Iniciar sesión" : "Crear cuenta"}</div>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
-        {msg && <div style={{background:"#E8F5E9",color:"#2E7D32",padding:"10px 14px",borderRadius:10,marginBottom:12,fontSize:13}}>{msg}</div>}
-        {error && <div style={{background:"#FCE4EC",color:"#C62828",padding:"10px 14px",borderRadius:10,marginBottom:12,fontSize:13}}>{error}</div>}
-        <input className="auth-input" type="email" placeholder="Email"
-          value={email} onChange={e => setEmail(e.target.value)} />
-        <input className="auth-input" type="password" placeholder="Contraseña"
-          value={password} onChange={e => setPassword(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && handleSubmit()} />
-        <button className="auth-btn" onClick={handleSubmit} disabled={loading}>
-          {loading ? "Cargando..." : modo === "login" ? "Iniciar sesión" : "Crear cuenta"}
-        </button>
-        <div style={{textAlign:"center",marginTop:12}}>
-          <button className="auth-link" onClick={() => {setModo(modo==="login"?"register":"login"); setError(""); setMsg("");}}>
-            {modo === "login" ? "¿No tenés cuenta? Registrate" : "¿Ya tenés cuenta? Iniciá sesión"}
+        <div className="modal-content">
+          {msg && <div style={{background:"#E8F5E9",color:"#2E7D32",padding:"12px 16px",borderRadius:10,marginBottom:16,fontSize:13,fontWeight:600}}>{msg}</div>}
+          {error && <div style={{background:"#FCE4EC",color:"#C62828",padding:"12px 16px",borderRadius:10,marginBottom:16,fontSize:13}}>{error}</div>}
+          <input className="auth-input" type="email" placeholder="Email"
+            value={email} onChange={e => setEmail(e.target.value)} 
+            style={{width:"100%",padding:"12px 16px",borderRadius:10,border:"2px solid var(--border)",marginBottom:12,fontSize:14,fontFamily:"inherit",outline:"none"}} />
+          <input className="auth-input" type="password" placeholder="Contraseña"
+            value={password} onChange={e => setPassword(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && handleSubmit()}
+            style={{width:"100%",padding:"12px 16px",borderRadius:10,border:"2px solid var(--border)",marginBottom:16,fontSize:14,fontFamily:"inherit",outline:"none"}} />
+          <button 
+            onClick={handleSubmit} 
+            disabled={loading}
+            style={{width:"100%",padding:"14px",background:"var(--text)",color:"#fff",border:"none",borderRadius:10,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",opacity:loading?0.7:1}}>
+            {loading ? "Cargando..." : modo === "login" ? "Iniciar sesión" : "Crear cuenta"}
           </button>
+          <div style={{textAlign:"center",marginTop:16}}>
+            <button 
+              onClick={() => {setModo(modo==="login"?"register":"login"); setError(""); setMsg("");}}
+              style={{background:"none",border:"none",color:"var(--text-secondary)",fontSize:13,cursor:"pointer",textDecoration:"underline"}}>
+              {modo === "login" ? "¿No tenés cuenta? Registrate" : "¿Ya tenés cuenta? Iniciá sesión"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -609,6 +1398,11 @@ function App() {
   });
   const [token, setToken]                 = React.useState(() => localStorage.getItem("sp_token") || null);
   const [showAuth, setShowAuth]           = React.useState(false);
+  const [toast, setToast]                 = React.useState(null);
+
+  function showToast(message, type = 'success') {
+    setToast({ message, type });
+  }
 
   function handleLogin(access_token, refresh_token, user) {
     setToken(access_token);
@@ -616,23 +1410,24 @@ function App() {
     localStorage.setItem("sp_token", access_token);
     localStorage.setItem("sp_refresh", refresh_token || "");
     localStorage.setItem("sp_user", JSON.stringify(user));
+    showToast(`¡Bienvenido ${user.email}!`);
   }
+  
   function handleLogout() {
     setToken(null);
     setUsuario(null);
     localStorage.removeItem("sp_token");
     localStorage.removeItem("sp_refresh");
     localStorage.removeItem("sp_user");
+    showToast("Sesión cerrada", "success");
   }
 
-  // Auto-refresh del token — renueva 5 minutos antes de que expire
   React.useEffect(() => {
     if (!token) return;
     try {
       const payload = JSON.parse(atob(token.split(".")[1]));
       const expiresIn = payload.exp * 1000 - Date.now() - 5 * 60 * 1000;
       if (expiresIn <= 0) {
-        // Ya expiró — intentar refresh inmediato
         refreshToken();
         return;
       }
@@ -699,7 +1494,6 @@ function App() {
     setLoading(false);
   }
 
-  // useEffect para filtros — resetea a página 1
   React.useEffect(() => {
     setPagina(1);
     const t = setTimeout(() => cargar(1), busqueda ? 400 : 0);
@@ -709,28 +1503,34 @@ function App() {
   async function toggleFav(e, id) {
     e.stopPropagation();
     if (!token) { setShowAuth(true); return; }
-    // Actualizar estado local inmediatamente para feedback visual instantáneo
+    
+    const product = productos.find(p => p.id === id);
+    const newFavState = !product.favorito;
+    
     setProductos(prev => prev.map(p => p.id === id ? {...p, favorito: !p.favorito} : p));
-    const res = await fetch(`${API}/productos/${id}/favorito`, { method:"POST", headers: token ? {Authorization:`Bearer ${token}`} : {} });
+    
+    showToast(newFavState ? "Agregado a favoritos 💚" : "Eliminado de favoritos");
+    
+    const res = await fetch(`${API}/productos/${id}/favorito`, { 
+      method: "POST", 
+      headers: token ? {Authorization:`Bearer ${token}`} : {} 
+    });
     const data = await res.json().catch(() => ({}));
-    // Si el servidor devuelve un estado distinto, sincronizar
+    
     if (data.favorito !== undefined) {
       setProductos(prev => prev.map(p => p.id === id ? {...p, favorito: data.favorito} : p));
     }
-    // Refrescar stats para actualizar contador de favoritos
+    
     fetch(`${API}/stats`, {headers:{Authorization:`Bearer ${token}`}})
       .then(r => r.json()).then(st => setStats(st)).catch(() => {});
   }
-
-  const productosOrdenados = productos;
-  const paginaReal = pagina;
-  const productosPagina = productosOrdenados;
 
   function cambiarPagina(p) {
     setPagina(p);
     cargar(p);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
+  
   function cambiarPorPagina(val) {
     setPorPagina(val);
     setPagina(1);
@@ -749,42 +1549,57 @@ function App() {
 
   return (
     <div>
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} onLogin={handleLogin} />}
       {modalProducto &&
         <Modal producto={modalProducto} onClose={() => setModalProducto(null)} />}
 
       <div className="header">
         <div>
-          <h1 style={{cursor:"pointer"}} onClick={() => { setTab("todos"); setSuperFiltro("Todos"); setCatFiltro("Todas"); setSubcatFiltro("Todas"); setBusqueda(""); setSoloOfertas(false); window.scrollTo({top:0,behavior:"smooth"}); }}>🛒 <span>Super</span>Precios AR</h1>
-          <p>VEA · Carrefour · MásOnline · Dino</p>
+          <h1 style={{cursor:"pointer"}} onClick={() => { 
+            setTab("todos"); setSuperFiltro("Todos"); setCatFiltro("Todas"); 
+            setSubcatFiltro("Todas"); setBusqueda(""); setSoloOfertas(false); 
+            window.scrollTo({top:0,behavior:"smooth"}); 
+          }}>
+            🛒 <span>Super</span>Precios AR
+          </h1>
+          <p>Compará precios en tiempo real · VEA · Carrefour · MásOnline · Dino</p>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:12}}>
           {usuario ? (
             <div style={{display:"flex",alignItems:"center",gap:8}}>
               <span style={{fontSize:12,color:"#9ca3af"}}>{usuario.email}</span>
               <button onClick={handleLogout}
-                style={{fontSize:11,padding:"4px 10px",borderRadius:8,border:"1px solid #374151",
-                  background:"none",color:"#9ca3af",cursor:"pointer"}}>
+                style={{fontSize:11,padding:"6px 12px",borderRadius:8,border:"1px solid #374151",
+                  background:"none",color:"#9ca3af",cursor:"pointer",transition:"all 0.2s"}}>
                 Salir
               </button>
             </div>
           ) : (
             <button onClick={() => setShowAuth(true)}
-              style={{fontSize:12,padding:"6px 14px",borderRadius:8,border:"none",
-                background:"#FFD600",color:"#000",fontWeight:700,cursor:"pointer"}}>
+              style={{fontSize:12,padding:"8px 16px",borderRadius:8,border:"none",
+                background:"var(--primary)",color:"#000",fontWeight:700,cursor:"pointer",
+                transition:"all 0.2s",boxShadow:"0 2px 8px rgba(255,214,0,0.3)"}}>
               Iniciar sesión
             </button>
           )}
-        <div className="stats">
-          <div className="stat" style={{cursor:"pointer"}} onClick={() => { setTab("todos"); setSuperFiltro("Todos"); setCatFiltro("Todas"); setSubcatFiltro("Todas"); setBusqueda(""); setSoloOfertas(false); window.scrollTo({top:0,behavior:"smooth"}); }}>
-            <div className="stat-val" style={{color:"#FFD600"}}>{stats.total_productos||0}</div>
-            <div className="stat-lbl">Productos</div>
+          <div className="stats">
+            <div className="stat" onClick={() => { 
+              setTab("todos"); setSuperFiltro("Todos"); setCatFiltro("Todas"); 
+              setSubcatFiltro("Todas"); setBusqueda(""); setSoloOfertas(false); 
+              window.scrollTo({top:0,behavior:"smooth"}); 
+            }}>
+              <div className="stat-val" style={{color:"var(--primary)"}}>{stats.total_productos||0}</div>
+              <div className="stat-lbl">Productos</div>
+            </div>
+            <div className="stat" onClick={() => { 
+              if (!token) { setShowAuth(true); return; } 
+              setTab("favoritos"); window.scrollTo({top:0,behavior:"smooth"}); 
+            }}>
+              <div className="stat-val" style={{color:"#4CAF50"}}>{stats.favoritos||0}</div>
+              <div className="stat-lbl">Favoritos</div>
+            </div>
           </div>
-          <div className="stat" style={{cursor:"pointer"}} onClick={() => { if (!token) { setShowAuth(true); return; } setTab("favoritos"); window.scrollTo({top:0,behavior:"smooth"}); }}>
-            <div className="stat-val" style={{color:"#4CAF50"}}>{stats.favoritos||0}</div>
-            <div className="stat-lbl">Favoritos</div>
-          </div>
-        </div>
         </div>
       </div>
 
@@ -795,10 +1610,11 @@ function App() {
               onClick={() => {
                 if (key === "favoritos" && !token) { setShowAuth(true); return; }
                 setTab(key);
-              }}>{label}
+              }}>
+              {label}
               {key==="favoritos" && stats.favoritos > 0 &&
-                <span style={{marginLeft:6,background:"#E91E63",color:"#fff",
-                  borderRadius:10,fontSize:10,padding:"1px 6px"}}>
+                <span style={{marginLeft:8,background:"#E91E63",color:"#fff",
+                  borderRadius:10,fontSize:10,padding:"2px 8px",fontWeight:700}}>
                   {stats.favoritos}
                 </span>}
             </button>
@@ -807,8 +1623,11 @@ function App() {
 
         <div className="search">
           <span>🔍</span>
-          <input value={busqueda} onChange={e => setBusqueda(e.target.value)}
-            placeholder="Buscar producto en todos los supermercados..." />
+          <input 
+            value={busqueda} 
+            onChange={e => setBusqueda(e.target.value)}
+            placeholder="¿Qué producto estás buscando? Ej: leche, coca, arroz..."
+          />
         </div>
 
         <div className="filters">
@@ -839,8 +1658,8 @@ function App() {
               <select
                 value={subcatFiltro}
                 onChange={e => setSubcatFiltro(e.target.value)}
-                style={{padding:"6px 12px",borderRadius:24,fontSize:12.5,fontWeight:700,
-                  border:"1.5px solid #e0e0e0",background:"#fff",color:"#555",
+                style={{padding:"8px 16px",borderRadius:24,fontSize:12,fontWeight:600,
+                  border:"1.5px solid var(--border)",background:"var(--card)",color:"var(--text)",
                   cursor:"pointer",outline:"none",fontFamily:"inherit"}}>
                 {subcats.map(s => (
                   <option key={s} value={s}>
@@ -861,34 +1680,29 @@ function App() {
           </div>
           <div className="filter-row">
             <span className="filter-label">Ofertas</span>
-            <div onClick={() => setSoloOfertas(!soloOfertas)}
-              style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",
-                background:soloOfertas?"#FCE4EC":"#f5f5f5",
-                border:soloOfertas?"1.5px solid #E91E63":"1.5px solid #e0e0e0",
-                borderRadius:24,padding:"6px 14px",transition:"all .2s"}}>
-              <div style={{width:36,height:20,borderRadius:10,position:"relative",
-                background:soloOfertas?"#E91E63":"#ccc",transition:"background .2s"}}>
-                <div style={{position:"absolute",top:2,left:soloOfertas?18:2,
-                  width:16,height:16,borderRadius:"50%",background:"#fff",
-                  transition:"left .2s",boxShadow:"0 1px 3px rgba(0,0,0,.2)"}}/>
+            <div 
+              onClick={() => setSoloOfertas(!soloOfertas)}
+              className={`offer-toggle ${soloOfertas ? 'active' : ''}`}>
+              <div className="toggle-switch">
+                <div className="toggle-knob"></div>
               </div>
-              <span style={{fontSize:12.5,fontWeight:700,color:soloOfertas?"#E91E63":"#555"}}>
+              <span style={{fontSize:13,fontWeight:700,color:soloOfertas?"#E91E63":"var(--text-secondary)"}}>
                 Solo ofertas y promos
               </span>
             </div>
           </div>
         </div>
 
-        <div className="result-count" style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
+        <div className="result-count">
           <span>
-            {loading ? "Cargando..." : `${totalProductos} producto${totalProductos!==1?"s":""} · página ${paginaReal} de ${totalPaginas}`}
+            {loading ? "Cargando productos..." : `${totalProductos.toLocaleString()} producto${totalProductos!==1?"s":""} · página ${pagina} de ${totalPaginas}`}
           </span>
-          <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
-            <span style={{fontSize:11,color:"#9ca3af"}}>Por página:</span>
-            {[[25,"25"],[50,"50"],[100,"100"],[1000,"1000"],[0,"Todos"]].map(([val,label]) => (
+          <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+            <span style={{fontSize:11,color:"var(--text-secondary)"}}>Mostrar:</span>
+            {[[25,"25"],[50,"50"],[100,"100"],[0,"Todos"]].map(([val,label]) => (
               <button key={val} onClick={() => cambiarPorPagina(val)}
                 className={`pill ${porPagina===val?"active":""}`}
-                style={{padding:"3px 10px",fontSize:11,
+                style={{padding:"4px 12px",fontSize:11,
                   ...(porPagina===val?{background:"#1a1a1a",color:"#fff",border:"none"}:{})}}>
                 {label}
               </button>
@@ -896,84 +1710,125 @@ function App() {
           </div>
         </div>
 
-        {productos.length === 0 && !loading ? (
+        {loading ? (
+          <div className="grid">
+            {[...Array(6)].map((_, i) => <SkeletonCard key={i} />)}
+          </div>
+        ) : productos.length === 0 ? (
           <div className="empty">
-            <div>🧐</div>
-            <p style={{fontSize:16,marginTop:12}}>No hay productos con esos filtros</p>
+            <div>🔍</div>
+            <p>No encontramos productos con esos filtros</p>
+            <p style={{fontSize:13,marginTop:8,opacity:0.7}}>Probá con otra búsqueda o ajustá los filtros</p>
           </div>
         ) : (
           <>
-          <div className="grid">
-            {productosPagina.map(p => {
-              const hasOffer = p.descuento_pct || p.promocion;
-              const sc = SUPER_COLORS[p.supermercado] || {bg:"#888",text:"#fff"};
-              return (
-                <div key={p.id} className={`card ${hasOffer?"oferta":""}`}
-                  onClick={() => setModalProducto(p)}>
-                  <button className="fav-btn" onClick={e => toggleFav(e, p.id)}
-                    style={{filter:p.favorito?"none":"grayscale(1) opacity(.35)"}}>
-                    {p.favorito ? "❤️" : "🤍"}
-                  </button>
-                  <div className="badges">
-                    <span className="super-badge"
-                      style={{background:sc.bg,color:sc.text}}>{p.supermercado}</span>
-                    <span className="cat-badge">{SUBCAT_LABELS[p.subcategoria] || CAT_LABELS[p.categoria] || p.categoria}</span>
-                    {p.scrapeado_en &&
-                      <span className="time-badge">{relTime(p.scrapeado_en)}</span>}
-                  </div>
-                  {p.imagen_url &&
-                    <img src={p.imagen_url} alt={p.nombre}
-                      style={{width:"100%",height:"140px",objectFit:"contain",
-                        borderRadius:"8px",background:"#f9f9f9"}} />}
-                  <div className="product-name">{p.nombre}</div>
-                  <div className="prices">
-                    <span className={`price ${hasOffer?"oferta":"normal"}`}>{fmt(p.precio)}</span>
-                    {p.precio_original &&
-                      <span className="price-original">{fmt(p.precio_original)}</span>}
-                    {p.descuento_pct && !p.promocion &&
-                      <span className="discount">-{p.descuento_pct}%</span>}
-                  </div>
-                  {p.promocion &&
-                    <span className="promo" style={{background:promoColor(p.promocion)}}>
-                      {p.promocion}
-                    </span>}
-                  {p.otros_supers && p.otros_supers.length > 0 && (() => {
-                    const ordenados = [...p.otros_supers].sort((a,b) => a.precio - b.precio);
-                    return (
-                      <div style={{marginTop:6,display:"flex",flexDirection:"column",gap:4}}>
-                        {ordenados.map((o, i) => {
-                          const esMasBarato = o.precio < p.precio;
-                          const osc = SUPER_COLORS[o.supermercado] || {bg:"#888",text:"#fff"};
-                          return (
-                            <a key={o.supermercado} href={o.url} target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={e => e.stopPropagation()}
-                              style={{
-                                fontSize:11, textDecoration:"none",
-                                display:"flex", justifyContent:"space-between",
-                                alignItems:"center", padding:"4px 8px",
-                                borderRadius:8,
-                                background: esMasBarato ? "#E8F5E9" : "#f9f9f9",
-                                border: esMasBarato ? "1px solid #A5D6A7" : "1px solid #ebebeb",
-                              }}>
-                              <span style={{fontWeight:700,color:osc.bg==="FFD600"?"#b8860b":osc.bg}}>
-                                {i===0 && esMasBarato ? "💚 " : ""}{o.supermercado}
-                              </span>
-                              <span style={{fontWeight:700,color:esMasBarato?"#2E7D32":"#555"}}>
-                                {fmt(o.precio)}
-                              </span>
-                            </a>
-                          );
-                        })}
+            <div className="grid">
+              {productos.map(p => {
+                const hasOffer = p.descuento_pct || p.promocion;
+                const sc = SUPER_COLORS[p.supermercado] || {bg:"#888",text:"#fff"};
+                const cheapestSuper = p.otros_supers?.length > 0 
+                  ? [...p.otros_supers].sort((a,b) => a.precio - b.precio)[0]
+                  : null;
+                const isCheapest = !cheapestSuper || p.precio <= cheapestSuper.precio;
+                
+                return (
+                  <div key={p.id} className={`card ${hasOffer?"oferta":""}`}
+                    onClick={() => setModalProducto(p)}>
+                    
+                    <div style={{position:"relative"}}>
+                      <img src={p.imagen_url || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="%23f0f0f0"/><text x="50" y="50" text-anchor="middle" fill="%23999" font-size="40">📦</text></svg>'} 
+                        alt={p.nombre}
+                        className="card-image"
+                        loading="lazy"
+                      />
+                      <span className="super-badge super-float" style={{background:sc.bg,color:sc.text}}>
+                        {p.supermercado}
+                      </span>
+                      <button className="fav-btn" onClick={e => toggleFav(e, p.id)}>
+                        {p.favorito ? "❤️" : "🤍"}
+                      </button>
+                      {p.scrapeado_en && (
+                        <span className="time-badge" style={{
+                          position:"absolute",bottom:8,right
+:8,fontSize:11,color:"var(--text-secondary)",background:"rgba(255,255,255,0.9)",padding:"4px 8px",borderRadius:12,zIndex:2}}>
+                          {relTime(p.scrapeado_en)}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="card-content">
+                      <div className="badges">
+                        <span className="cat-badge">{SUBCAT_LABELS[p.subcategoria] || CAT_LABELS[p.categoria] || p.categoria}</span>
+                        {isCheapest && (
+                          <span style={{fontSize:10,fontWeight:800,color:"#2E7D32",background:"#E8F5E9",padding:"2px 8px",borderRadius:10}}>
+                            💚 Mejor precio
+                          </span>
+                        )}
                       </div>
-                    );
-                  })()}
-                </div>
-              );
-            })}
-          </div>
+                      
+                      <div className="product-name">{p.nombre}</div>
+                      
+                      <div className="prices">
+                        <span className={`price ${hasOffer?"oferta":"normal"}`}>
+                          {fmt(p.precio)}
+                        </span>
+                        {p.precio_original && (
+                          <span className="price-original">{fmt(p.precio_original)}</span>
+                        )}
+                        {p.descuento_pct && !p.promocion && (
+                          <span className="discount">-{p.descuento_pct}%</span>
+                        )}
+                      </div>
+
+                      {p.promocion && (
+                        <span className="promo" style={{background:promoColor(p.promocion)}}>
+                          {p.promocion}
+                        </span>
+                      )}
+
+                      {p.historial_precios && p.historial_precios.length > 1 && (
+                        <Sparkline data={p.historial_precios.slice(-5)} />
+                      )}
+
+                      {p.otros_supers && p.otros_supers.length > 0 && (
+                        <div className="price-compare">
+                          {[...p.otros_supers]
+                            .sort((a,b) => a.precio - b.precio)
+                            .slice(0, 2)
+                            .map((o, i) => {
+                              const osc = SUPER_COLORS[o.supermercado] || {bg:"#888",text:"#fff"};
+                              const esMasBarato = o.precio < p.precio;
+                              return (
+                                <a key={o.supermercado} href={o.url} target="_blank" rel="noopener noreferrer"
+                                  onClick={e => e.stopPropagation()}
+                                  className={`compare-row ${esMasBarato ? 'best' : ''}`}>
+                                  <span className="compare-super">
+                                    <span style={{fontSize:10,fontWeight:700,color:osc.bg}}>
+                                      {o.supermercado}
+                                    </span>
+                                    {esMasBarato && <span className="best-badge">MEJOR</span>}
+                                  </span>
+                                  <span style={{fontWeight:700,color:esMasBarato?"#2E7D32":"var(--text)"}}>
+                                    {fmt(o.precio)}
+                                  </span>
+                                </a>
+                              );
+                            })}
+                          {p.otros_supers.length > 2 && (
+                            <div style={{textAlign:"center",fontSize:11,color:"var(--text-secondary)",marginTop:4}}>
+                              +{p.otros_supers.length - 2} supermercados más
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
             <Paginacion
-              paginaActual={paginaReal}
+              paginaActual={pagina}
               totalPaginas={totalPaginas}
               onCambiar={cambiarPagina}
             />
@@ -981,9 +1836,26 @@ function App() {
         )}
 
         <div className="footer">
-          <strong>Actualización automática:</strong> todos los días a las 08:00 y 20:00 hs.
-          Tocá el corazón de cualquier producto para agregarlo a favoritos.
-          Clickeá cualquier producto para ver el historial de precios.
+          <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:16,marginBottom:12,flexWrap:"wrap"}}>
+            <span style={{display:"flex",alignItems:"center",gap:6}}>
+              <span style={{fontSize:16}}>🤖</span>
+              <span>Actualización automática: 08:00 y 20:00 hs</span>
+            </span>
+            <span style={{color:"var(--border)"}}>|</span>
+            <span style={{display:"flex",alignItems:"center",gap:6}}>
+              <span style={{fontSize:16}}>💚</span>
+              <span>Agregá favoritos para alertas de precio</span>
+            </span>
+            <span style={{color:"var(--border)"}}>|</span>
+            <span style={{display:"flex",alignItems:"center",gap:6}}>
+              <span style={{fontSize:16}}>📊</span>
+              <span>Clickeá para ver historial</span>
+            </span>
+          </div>
+          <p style={{fontSize:11,opacity:0.7}}>
+            Compará precios entre VEA, Carrefour, MásOnline y Dino · 
+            {usuario ? ` Conectado como ${usuario.email}` : ' Iniciá sesión para guardar favoritos'}
+          </p>
         </div>
       </div>
     </div>
