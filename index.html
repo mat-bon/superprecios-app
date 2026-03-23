@@ -549,7 +549,7 @@ function AuthModal({ onClose, onLogin }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || "Error");
       if (modo === "login") {
-        onLogin(data.access_token, data.user);
+        onLogin(data.access_token, data.refresh_token, data.user);
         onClose();
       } else {
         setMsg("¡Registro exitoso! Revisá tu email para confirmar tu cuenta.");
@@ -610,19 +610,54 @@ function App() {
   const [token, setToken]                 = React.useState(() => localStorage.getItem("sp_token") || null);
   const [showAuth, setShowAuth]           = React.useState(false);
 
-  function handleLogin(access_token, user) {
+  function handleLogin(access_token, refresh_token, user) {
     setToken(access_token);
     setUsuario(user);
     localStorage.setItem("sp_token", access_token);
+    localStorage.setItem("sp_refresh", refresh_token || "");
     localStorage.setItem("sp_user", JSON.stringify(user));
-    // El useEffect con [token] dispara cargar() automáticamente
   }
   function handleLogout() {
     setToken(null);
     setUsuario(null);
     localStorage.removeItem("sp_token");
+    localStorage.removeItem("sp_refresh");
     localStorage.removeItem("sp_user");
-    // El useEffect con [token] dispara cargar() automáticamente
+  }
+
+  // Auto-refresh del token — renueva 5 minutos antes de que expire
+  React.useEffect(() => {
+    if (!token) return;
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      const expiresIn = payload.exp * 1000 - Date.now() - 5 * 60 * 1000;
+      if (expiresIn <= 0) {
+        // Ya expiró — intentar refresh inmediato
+        refreshToken();
+        return;
+      }
+      const timer = setTimeout(refreshToken, expiresIn);
+      return () => clearTimeout(timer);
+    } catch(e) {}
+  }, [token]);
+
+  async function refreshToken() {
+    const refresh = localStorage.getItem("sp_refresh");
+    if (!refresh) { handleLogout(); return; }
+    try {
+      const res = await fetch(`${API}/auth/refresh`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({refresh_token: refresh})
+      });
+      if (!res.ok) { handleLogout(); return; }
+      const data = await res.json();
+      setToken(data.access_token);
+      localStorage.setItem("sp_token", data.access_token);
+      if (data.refresh_token) localStorage.setItem("sp_refresh", data.refresh_token);
+    } catch(e) {
+      handleLogout();
+    }
   }
 
   const cargarRef = React.useRef(null);
