@@ -816,13 +816,6 @@ function App() {
             </div>
           )}
           <div className="filter-row">
-            <button className={`pill ${soloOfertas?"active":""}`}
-              style={soloOfertas?{background:"#E91E63",color:"#fff"}:{}}
-              onClick={() => setSoloOfertas(!soloOfertas)}>
-              Solo ofertas y promos
-            </button>
-          </div>
-          <div className="filter-row">
             <span className="filter-label">Ordenar por</span>
             {[["popular","Más populares"],["precio-asc","Precio ↑"],
               ["precio-desc","Precio ↓"],["descuento","Mayor descuento"],["reciente","Más reciente"]].map(([key,label]) => (
@@ -830,6 +823,24 @@ function App() {
                 style={orden===key?{background:"#1a1a1a",color:"#fff"}:{}}
                 onClick={() => setOrden(key)}>{label}</button>
             ))}
+          </div>
+          <div className="filter-row">
+            <span className="filter-label">Ofertas</span>
+            <div onClick={() => setSoloOfertas(!soloOfertas)}
+              style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",
+                background:soloOfertas?"#FCE4EC":"#f5f5f5",
+                border:soloOfertas?"1.5px solid #E91E63":"1.5px solid #e0e0e0",
+                borderRadius:24,padding:"6px 14px",transition:"all .2s"}}>
+              <div style={{width:36,height:20,borderRadius:10,position:"relative",
+                background:soloOfertas?"#E91E63":"#ccc",transition:"background .2s"}}>
+                <div style={{position:"absolute",top:2,left:soloOfertas?18:2,
+                  width:16,height:16,borderRadius:"50%",background:"#fff",
+                  transition:"left .2s",boxShadow:"0 1px 3px rgba(0,0,0,.2)"}}/>
+              </div>
+              <span style={{fontSize:12.5,fontWeight:700,color:soloOfertas?"#E91E63":"#555"}}>
+                Solo ofertas y promos
+              </span>
+            </div>
           </div>
         </div>
 
